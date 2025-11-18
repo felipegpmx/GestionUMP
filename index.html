@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="description" content="Sistema de Gestión de Control de Unidades Móviles de Pesaje"/>
   <meta name="theme-color" content="#007bff"/>
+  
+  <!-- Seguridad -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta name="referrer" content="strict-origin-when-cross-origin"/>
+  
   <title>Sistema de Gestión de Control - UMP</title>
 
   <!-- PWA -->
@@ -15,557 +20,1189 @@
   <link rel="stylesheet" href="styles.css"/>
 
   <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 
   <!-- jsPDF + AutoTable -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js" defer></script>
 
   <!-- Leaflet Maps -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 </head>
 <body>
-  <!-- Barra Superior -->
+  <!-- ============================================
+       BARRA SUPERIOR
+       ============================================ -->
   <header class="top-bar">
     <div class="top-bar-left">
       <h1>🚛 Sistema de Gestión de Control - UMP</h1>
     </div>
     <div class="top-bar-right">
+      <!-- Usuario -->
       <div class="user-menu">
-        <button class="btn-icon" onclick="Users.showLoginModal()" id="btnUser">
+        <button class="btn-icon" data-action="show-login" id="btnUser" aria-label="Menú de usuario">
           <span id="userDisplay">👤 Invitado</span>
         </button>
       </div>
+      
+      <!-- Notificaciones -->
       <div class="notification-bell">
-        <button class="btn-icon" onclick="Notifications.togglePanel()">
+        <button class="btn-icon" data-action="toggle-notifications" aria-label="Notificaciones">
           🔔 <span class="badge" id="notificationCount">0</span>
         </button>
       </div>
-      <button class="btn-icon" onclick="App.toggleDarkMode()" title="Cambiar tema">
+      
+      <!-- Mapa Externo (NUEVO) -->
+      <a href="MAPA.HTML" class="btn-icon" title="Abrir Mapa Completo" aria-label="Abrir mapa en nueva ventana" target="_blank" rel="noopener noreferrer">
+        🗺️ <span class="sr-only">Mapa Completo</span>
+      </a>
+      
+      <!-- Tema -->
+      <button class="btn-icon" data-action="toggle-theme" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">
         <span id="themeIcon">🌙</span>
       </button>
     </div>
   </header>
 
-  <!-- Panel de Notificaciones -->
-  <div id="notificationPanel" class="notification-panel hidden">
+  <!-- ============================================
+       PANEL DE NOTIFICACIONES
+       ============================================ -->
+  <aside id="notificationPanel" class="notification-panel hidden" role="complementary" aria-label="Panel de notificaciones">
     <div class="notification-header">
       <h3>Notificaciones</h3>
-      <button onclick="Notifications.clearAll()" class="btn-link">Limpiar todo</button>
+      <button data-action="clear-notifications" class="btn-link" aria-label="Limpiar todas las notificaciones">Limpiar todo</button>
     </div>
-    <div id="notificationList" class="notification-list"></div>
-  </div>
+    <div id="notificationList" class="notification-list" role="list"></div>
+  </aside>
 
   <div class="container">
-    <!-- Navegación de Pestañas -->
+    <!-- ============================================
+         NAVEGACIÓN DE PESTAÑAS
+         ============================================ -->
     <nav class="tabs" role="tablist" aria-label="Navegación principal">
-      <button class="tab-button active" role="tab" onclick="App.ui.showTab('formulario-tab', event)">📝 Ingreso de Datos</button>
-      <button class="tab-button" role="tab" onclick="App.ui.showTab('gestion-tab', event)">📋 Gestión de Registros</button>
-      <button class="tab-button" role="tab" onclick="App.ui.showTab('estadisticas-tab', event)">📊 Dashboard</button>
-      <button class="tab-button" role="tab" onclick="App.ui.showTab('analytics-tab', event)">📈 Analytics</button>
-      <button class="tab-button" role="tab" onclick="App.ui.showTab('calendario-tab', event)">📅 Calendario</button>
-      <button class="tab-button" role="tab" onclick="App.ui.showTab('mapa-tab', event)">🗺️ Mapa</button>
-      <button class="tab-button" role="tab" onclick="App.ui.showTab('puntos-tab', event)">📍 Puntos</button>
+      <button class="tab-button active" 
+              role="tab" 
+              data-action="show-tab" 
+              data-tab="formulario-tab" 
+              aria-selected="true" 
+              aria-controls="formulario-tab">
+        📝 Ingreso de Datos
+      </button>
+      <button class="tab-button" 
+              role="tab" 
+              data-action="show-tab" 
+              data-tab="gestion-tab" 
+              aria-selected="false" 
+              aria-controls="gestion-tab">
+        📋 Gestión de Registros
+      </button>
+      <button class="tab-button" 
+              role="tab" 
+              data-action="show-tab" 
+              data-tab="estadisticas-tab" 
+              aria-selected="false" 
+              aria-controls="estadisticas-tab">
+        📊 Dashboard
+      </button>
+      <button class="tab-button" 
+              role="tab" 
+              data-action="show-tab" 
+              data-tab="analytics-tab" 
+              aria-selected="false" 
+              aria-controls="analytics-tab">
+        📈 Analytics
+      </button>
+      <button class="tab-button" 
+              role="tab" 
+              data-action="show-tab" 
+              data-tab="calendario-tab" 
+              aria-selected="false" 
+              aria-controls="calendario-tab">
+        📅 Calendario
+      </button>
+      <button class="tab-button" 
+              role="tab" 
+              data-action="show-tab" 
+              data-tab="mapa-tab" 
+              aria-selected="false" 
+              aria-controls="mapa-tab">
+        🗺️ Mapa Integrado
+      </button>
+      <button class="tab-button" 
+              role="tab" 
+              data-action="show-tab" 
+              data-tab="puntos-tab" 
+              aria-selected="false" 
+              aria-controls="puntos-tab">
+        📍 Puntos
+      </button>
     </nav>
 
-    <!-- Pestaña 1: Formulario -->
-    <div id="formulario-tab" class="tab-content active" role="tabpanel">
+    <!-- ============================================
+         PESTAÑA 1: FORMULARIO DE INGRESO
+         ============================================ -->
+    <section id="formulario-tab" class="tab-content active" role="tabpanel" aria-labelledby="tab-formulario">
       <h2>Nuevo Registro de Control</h2>
-      <form id="controlForm">
+      <form id="controlForm" novalidate>
+        <!-- Datos Básicos -->
         <div class="form-grid">
           <div class="form-group">
             <label for="fecha">Fecha de Control <span class="required">*</span></label>
-            <input type="date" id="fecha" required aria-required="true"/>
+            <input type="date" 
+                   id="fecha" 
+                   name="fecha" 
+                   required 
+                   aria-required="true"
+                   aria-describedby="fecha-help"/>
+            <small id="fecha-help" class="help-text">No puede ser fecha futura</small>
           </div>
 
           <div class="form-group">
             <label for="regionSelect">Filtrar por Región</label>
-            <select id="regionSelect" aria-label="Filtrar puntos por región">
+            <select id="regionSelect" 
+                    name="regionFilter" 
+                    aria-label="Filtrar puntos por región"
+                    data-action="filter-region">
               <option value="">Todas las Regiones</option>
             </select>
           </div>
 
           <div class="form-group">
             <label for="puntoControl">Punto de Control <span class="required">*</span></label>
-            <select id="puntoControl" required aria-required="true">
+            <select id="puntoControl" 
+                    name="puntoControl" 
+                    required 
+                    aria-required="true"
+                    data-action="select-punto">
               <option value="">Seleccione un punto...</option>
             </select>
           </div>
 
           <div class="form-group">
             <label for="region">Región</label>
-            <input type="text" id="region" readonly/>
+            <input type="text" id="region" name="region" readonly aria-readonly="true"/>
           </div>
 
           <div class="form-group">
             <label for="comuna">Comuna</label>
-            <input type="text" id="comuna" readonly/>
+            <input type="text" id="comuna" name="comuna" readonly aria-readonly="true"/>
           </div>
 
           <div class="form-group">
             <label for="provincia">Provincia</label>
-            <input type="text" id="provincia" readonly/>
+            <input type="text" id="provincia" name="provincia" readonly aria-readonly="true"/>
           </div>
 
           <div class="form-group">
             <label for="foso">Foso</label>
-            <input type="text" id="foso" readonly/>
+            <input type="text" id="foso" name="foso" readonly aria-readonly="true"/>
           </div>
 
           <div class="form-group">
             <label for="ruta">Ruta</label>
-            <input type="text" id="ruta" readonly/>
+            <input type="text" id="ruta" name="ruta" readonly aria-readonly="true"/>
           </div>
 
           <div class="form-group">
             <label for="kilometro">Kilómetro</label>
-            <input type="text" id="kilometro" readonly/>
+            <input type="text" id="kilometro" name="kilometro" readonly aria-readonly="true"/>
           </div>
 
           <div class="form-group">
             <label for="sentido">Sentido de Control</label>
-            <input type="text" id="sentido" readonly/>
+            <input type="text" id="sentido" name="sentido" readonly aria-readonly="true"/>
           </div>
         </div>
 
-        <!-- Sección Horario -->
-        <div class="horario-section" style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid var(--primary-color);">
-          <h3 style="margin-top: 0;">⏰ Horario de Control</h3>
+        <!-- ============================================
+             SECCIÓN HORARIO
+             ============================================ -->
+        <fieldset class="horario-section" style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid var(--primary-color);">
+          <legend style="font-size: 18px; font-weight: 600; margin-bottom: 15px;">⏰ Horario de Control</legend>
+          
           <div class="form-grid">
             <div class="form-group">
               <label for="horaInicio">Hora de Inicio <span class="required">*</span></label>
-              <input type="time" id="horaInicio" required onchange="HorasControl.calcularTotal()"/>
-              <small style="color: var(--text-secondary);">Hora de inicio del control</small>
+              <input type="time" 
+                     id="horaInicio" 
+                     name="horaInicio" 
+                     required 
+                     aria-required="true"
+                     data-action="calcular-horas"/>
+              <small class="help-text">Hora de inicio del control</small>
             </div>
+
             <div class="form-group">
               <label for="horaFin">Hora de Fin <span class="required">*</span></label>
-              <input type="time" id="horaFin" required onchange="HorasControl.calcularTotal()"/>
-              <small style="color: var(--text-secondary);">Hora de finalización del control</small>
+              <input type="time" 
+                     id="horaFin" 
+                     name="horaFin" 
+                     required 
+                     aria-required="true"
+                     data-action="calcular-horas"/>
+              <small class="help-text">Hora de finalización del control</small>
             </div>
+
             <div class="form-group">
-              <label>Total de Horas de Control</label>
+              <label for="horasTotalDisplay">Total de Horas de Control</label>
               <div style="display:flex;gap:10px;align-items:center;">
-                <input type="text" id="horasTotalDisplay" readonly style="background: var(--bg-tertiary); font-weight: bold; font-size: 18px; text-align: center;" placeholder="00:00:00"/>
-                <button type="button" class="btn-secondary" onclick="HorasControl.ajustarManual()" style="padding:10px;">⚙️ Ajustar</button>
+                <input type="text" 
+                       id="horasTotalDisplay" 
+                       readonly 
+                       aria-readonly="true"
+                       style="background: var(--bg-tertiary); font-weight: bold; font-size: 18px; text-align: center;" 
+                       placeholder="00:00:00"
+                       aria-describedby="horas-total-help"/>
+                <button type="button" 
+                        class="btn-secondary" 
+                        data-action="ajustar-horas-manual" 
+                        style="padding:10px;"
+                        aria-label="Ajustar horas manualmente">
+                  ⚙️ Ajustar
+                </button>
               </div>
-              <small style="color: var(--text-secondary);">Calculado automáticamente</small>
+              <small id="horas-total-help" class="help-text">Calculado automáticamente</small>
             </div>
           </div>
 
-          <!-- Ajuste Manual -->
-          <div id="ajusteManualHoras" class="hidden" style="margin-top:15px;padding:15px;background:var(--bg-primary);border-radius:4px;border:1px dashed var(--border-color);">
+          <!-- Ajuste Manual (oculto por defecto) -->
+          <div id="ajusteManualHoras" 
+               class="hidden" 
+               style="margin-top:15px;padding:15px;background:var(--bg-primary);border-radius:4px;border:1px dashed var(--border-color);"
+               aria-hidden="true">
             <h4 style="margin-top:0;font-size:14px;">⚙️ Ajuste Manual de Horas</h4>
-            <div class="horas-group">
-              <div class="form-group">
-                <input type="number" id="horasH" min="0" max="999" value="0"/>
-                <label>Horas</label>
+            <div class="horas-group" style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;">
+              <div class="form-group" style="flex:1;min-width:80px;">
+                <label for="horasH">Horas</label>
+                <input type="number" 
+                       id="horasH" 
+                       name="horasH" 
+                       min="0" 
+                       max="999" 
+                       value="0"
+                       aria-label="Horas"/>
               </div>
-              <div class="form-group">
-                <input type="number" id="horasM" min="0" max="59" value="0"/>
-                <label>Minutos</label>
+              <div class="form-group" style="flex:1;min-width:80px;">
+                <label for="horasM">Minutos</label>
+                <input type="number" 
+                       id="horasM" 
+                       name="horasM" 
+                       min="0" 
+                       max="59" 
+                       value="0"
+                       aria-label="Minutos"/>
               </div>
-              <div class="form-group">
-                <input type="number" id="horasS" min="0" max="59" value="0"/>
-                <label>Segundos</label>
+              <div class="form-group" style="flex:1;min-width:80px;">
+                <label for="horasS">Segundos</label>
+                <input type="number" 
+                       id="horasS" 
+                       name="horasS" 
+                       min="0" 
+                       max="59" 
+                       value="0"
+                       aria-label="Segundos"/>
               </div>
-              <button type="button" class="btn-primary" onclick="HorasControl.aplicarManual()">Aplicar</button>
+              <button type="button" 
+                      class="btn-primary" 
+                      data-action="aplicar-horas-manual"
+                      style="flex:0;">
+                Aplicar
+              </button>
             </div>
           </div>
-        </div>
+        </fieldset>
 
-        <!-- Datos de Vehículos -->
+        <!-- ============================================
+             DATOS DE VEHÍCULOS
+             ============================================ -->
         <div class="form-grid">
           <div class="form-group">
             <label for="vehiculosControlados">Vehículos Controlados <span class="required">*</span></label>
-            <input type="number" id="vehiculosControlados" min="0" required onchange="HorasControl.calcularPromedios()"/>
+            <input type="number" 
+                   id="vehiculosControlados" 
+                   name="vehiculosControlados" 
+                   min="0" 
+                   max="99999"
+                   required 
+                   aria-required="true"
+                   data-action="calcular-promedios"
+                   aria-describedby="vehiculos-help"/>
+            <small id="vehiculos-help" class="help-text">Total de vehículos pesados</small>
           </div>
+
           <div class="form-group">
             <label for="vehiculosSobrepeso">Vehículos con Sobrepeso <span class="required">*</span></label>
-            <input type="number" id="vehiculosSobrepeso" min="0" required onchange="HorasControl.calcularPromedios()"/>
+            <input type="number" 
+                   id="vehiculosSobrepeso" 
+                   name="vehiculosSobrepeso" 
+                   min="0" 
+                   max="99999"
+                   required 
+                   aria-required="true"
+                   data-action="calcular-promedios"
+                   aria-describedby="sobrepeso-help"/>
+            <small id="sobrepeso-help" class="help-text">No puede superar controlados</small>
           </div>
+
           <div class="form-group">
             <label for="vehiculosInfraccionados">Vehículos Infraccionados <span class="required">*</span></label>
-            <input type="number" id="vehiculosInfraccionados" min="0" required onchange="HorasControl.calcularPromedios()"/>
+            <input type="number" 
+                   id="vehiculosInfraccionados" 
+                   name="vehiculosInfraccionados" 
+                   min="0" 
+                   max="99999"
+                   required 
+                   aria-required="true"
+                   data-action="calcular-promedios"
+                   aria-describedby="infraccion-help"/>
+            <small id="infraccion-help" class="help-text">No puede superar controlados</small>
           </div>
         </div>
 
-        <!-- Indicadores en Vivo -->
-        <div id="indicadoresVivo" class="stats-grid" style="margin:20px 0; display:none;">
+        <!-- ============================================
+             INDICADORES EN VIVO
+             ============================================ -->
+        <div id="indicadoresVivo" class="stats-grid" style="margin:20px 0; display:none;" role="region" aria-live="polite">
           <div class="stat-card" style="border-left-color: var(--success-color);">
             <h3>Promedio Veh/Hora</h3>
-            <p id="livePromedioVehHora">0</p>
+            <p id="livePromedioVehHora" aria-label="Promedio de vehículos por hora">0</p>
           </div>
           <div class="stat-card" style="border-left-color: var(--warning-color);">
             <h3>% Sobrepeso</h3>
-            <p id="livePorcentajeSobrepeso">0%</p>
+            <p id="livePorcentajeSobrepeso" aria-label="Porcentaje de sobrepeso">0%</p>
           </div>
           <div class="stat-card" style="border-left-color: var(--danger-color);">
             <h3>% Infracciones</h3>
-            <p id="livePorcentajeInfraccion">0%</p>
+            <p id="livePorcentajeInfraccion" aria-label="Porcentaje de infracciones">0%</p>
           </div>
         </div>
 
-        <!-- Observaciones -->
-        <div class="observaciones-section" style="margin: 20px 0;">
+        <!-- ============================================
+             OBSERVACIONES
+             ============================================ -->
+        <fieldset class="observaciones-section" style="margin: 20px 0;">
+          <legend class="sr-only">Observaciones del control</legend>
+          
           <div class="form-group">
-            <label for="observaciones">📝 Observaciones del Control
+            <label for="observaciones">
+              📝 Observaciones del Control
               <small style="font-weight: normal; color: var(--text-secondary);">(Opcional - Máx. 1000 caracteres)</small>
             </label>
-            <textarea id="observaciones" rows="5" maxlength="1000"
-              placeholder="Registre aquí información relevante del control: incidentes, condiciones climáticas, particularidades del día, etc."
-              style="width:100%;padding:12px;border:1px solid var(--border-color);border-radius:4px;font-family:inherit;font-size:14px;resize:vertical;background:var(--bg-primary);color:var(--text-primary);"
-              oninput="HorasControl.actualizarContador(this)"></textarea>
+            <textarea id="observaciones" 
+                      name="observaciones" 
+                      rows="5" 
+                      maxlength="1000"
+                      placeholder="Registre aquí información relevante del control: incidentes, condiciones climáticas, particularidades del día, etc."
+                      style="width:100%;padding:12px;border:1px solid var(--border-color);border-radius:4px;font-family:inherit;font-size:14px;resize:vertical;background:var(--bg-primary);color:var(--text-primary);"
+                      data-action="actualizar-contador"
+                      aria-describedby="obs-help obs-counter"></textarea>
+            
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;">
-              <small style="color: var(--text-secondary);">💡 Ejemplos: "Lluvia intensa", "Mayor flujo por feriado", "Carga irregular"</small>
-              <small id="charCounter" style="color: var(--text-muted);">0 / 1000</small>
+              <small id="obs-help" class="help-text">💡 Ejemplos: "Lluvia intensa", "Mayor flujo por feriado", "Carga irregular"</small>
+              <small id="charCounter" aria-live="polite" style="color: var(--text-muted);">0 / 1000</small>
             </div>
           </div>
 
-          <!-- Plantillas -->
+          <!-- Plantillas Rápidas -->
           <div style="margin-top:10px;">
-            <label style="font-size:13px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:8px;">🚀 Plantillas Rápidas:</label>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button type="button" class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="HorasControl.agregarPlantilla('Control normal sin incidentes.')">✅ Control Normal</button>
-              <button type="button" class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="HorasControl.agregarPlantilla('Condiciones climáticas adversas (lluvia/viento).')">🌧️ Mal Clima</button>
-              <button type="button" class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="HorasControl.agregarPlantilla('Mayor flujo vehicular de lo habitual.')">🚛 Alto Flujo</button>
-              <button type="button" class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="HorasControl.agregarPlantilla('Se detectaron irregularidades en documentación.')">📋 Irregularidades</button>
-              <button type="button" class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="HorasControl.limpiarObservaciones()">🗑️ Limpiar</button>
+            <label style="font-size:13px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:8px;">
+              🚀 Plantillas Rápidas:
+            </label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;" role="group" aria-label="Plantillas de observaciones">
+              <button type="button" 
+                      class="btn-secondary" 
+                      style="font-size:12px;padding:6px 12px;" 
+                      data-action="plantilla-obs" 
+                      data-texto="Control normal sin incidentes.">
+                ✅ Control Normal
+              </button>
+              <button type="button" 
+                      class="btn-secondary" 
+                      style="font-size:12px;padding:6px 12px;" 
+                      data-action="plantilla-obs" 
+                      data-texto="Condiciones climáticas adversas (lluvia/viento).">
+                🌧️ Mal Clima
+              </button>
+              <button type="button" 
+                      class="btn-secondary" 
+                      style="font-size:12px;padding:6px 12px;" 
+                      data-action="plantilla-obs" 
+                      data-texto="Mayor flujo vehicular de lo habitual.">
+                🚛 Alto Flujo
+              </button>
+              <button type="button" 
+                      class="btn-secondary" 
+                      style="font-size:12px;padding:6px 12px;" 
+                      data-action="plantilla-obs" 
+                      data-texto="Se detectaron irregularidades en documentación.">
+                📋 Irregularidades
+              </button>
+              <button type="button" 
+                      class="btn-secondary" 
+                      style="font-size:12px;padding:6px 12px;" 
+                      data-action="limpiar-obs">
+                🗑️ Limpiar
+              </button>
             </div>
           </div>
-        </div>
+        </fieldset>
 
+        <!-- ============================================
+             ACCIONES DEL FORMULARIO
+             ============================================ -->
         <div class="form-actions">
           <div class="form-actions-left">
-            <button type="button" class="btn-success" onclick="App.ui.abrirModalNuevoPunto()">+ Agregar Nuevo Punto</button>
+            <button type="button" 
+                    class="btn-success" 
+                    data-action="nuevo-punto"
+                    aria-label="Agregar nuevo punto de control">
+              + Agregar Nuevo Punto
+            </button>
           </div>
           <div class="form-actions-right">
-            <button type="button" class="btn-secondary" onclick="App.form.limpiar()">Limpiar</button>
-            <button type="submit" class="btn-primary" id="guardarBtn">💾 Guardar Control</button>
+            <button type="button" 
+                    class="btn-secondary" 
+                    data-action="limpiar-form"
+                    aria-label="Limpiar formulario">
+              Limpiar
+            </button>
+            <button type="submit" 
+                    class="btn-primary" 
+                    id="guardarBtn"
+                    data-loading="false">
+              <span class="btn-text">💾 Guardar Control</span>
+              <span class="btn-spinner hidden">⏳ Guardando...</span>
+            </button>
           </div>
         </div>
       </form>
-    </div>
+    </section>
 
-    <!-- Pestaña 2: Gestión -->
-    <div id="gestion-tab" class="tab-content" role="tabpanel">
+    <!-- ============================================
+         PESTAÑA 2: GESTIÓN DE REGISTROS
+         ============================================ -->
+    <section id="gestion-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-gestion">
       <h2>Gestión de Registros</h2>
 
       <!-- Filtros Avanzados -->
       <div class="filters-panel">
-        <button class="btn-secondary" onclick="Filters.togglePanel()">🔍 Filtros Avanzados</button>
-        <div id="advancedFilters" class="advanced-filters hidden">
+        <button class="btn-secondary" data-action="toggle-filters" aria-expanded="false" aria-controls="advancedFilters">
+          🔍 Filtros Avanzados
+        </button>
+        
+        <div id="advancedFilters" class="advanced-filters hidden" aria-hidden="true">
           <div class="form-grid">
             <div class="form-group">
               <label for="filterFechaDesde">Fecha Desde</label>
-              <input type="date" id="filterFechaDesde"/>
+              <input type="date" id="filterFechaDesde" name="filterFechaDesde"/>
             </div>
             <div class="form-group">
               <label for="filterFechaHasta">Fecha Hasta</label>
-              <input type="date" id="filterFechaHasta"/>
+              <input type="date" id="filterFechaHasta" name="filterFechaHasta"/>
             </div>
             <div class="form-group">
               <label for="filterRegion">Región</label>
-              <select id="filterRegion">
+              <select id="filterRegion" name="filterRegion">
                 <option value="">Todas</option>
               </select>
             </div>
             <div class="form-group">
               <label for="filterPunto">Punto de Control</label>
-              <select id="filterPunto">
+              <select id="filterPunto" name="filterPunto">
                 <option value="">Todos</option>
               </select>
             </div>
             <div class="form-group">
               <label for="filterMinVehiculos">Min. Vehículos</label>
-              <input type="number" id="filterMinVehiculos" min="0"/>
+              <input type="number" id="filterMinVehiculos" name="filterMinVehiculos" min="0"/>
             </div>
             <div class="form-group">
               <label for="filterMaxInfraccion">% Infracción Mayor a</label>
-              <input type="number" id="filterMaxInfraccion" min="0" max="100"/>
+              <input type="number" id="filterMaxInfraccion" name="filterMaxInfraccion" min="0" max="100"/>
             </div>
           </div>
           <div class="form-actions">
-            <button class="btn-primary" onclick="Filters.apply()">Aplicar Filtros</button>
-            <button class="btn-secondary" onclick="Filters.clear()">Limpiar</button>
+            <button class="btn-primary" data-action="aplicar-filtros">Aplicar Filtros</button>
+            <button class="btn-secondary" data-action="limpiar-filtros">Limpiar</button>
           </div>
         </div>
       </div>
 
       <!-- Búsqueda -->
       <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="🔍 Buscar en registros (incluye observaciones)..." onkeyup="Filters.search(this.value)"/>
+        <label for="searchInput" class="sr-only">Buscar en registros</label>
+        <input type="search" 
+               id="searchInput" 
+               placeholder="🔍 Buscar en registros (incluye observaciones)..." 
+               data-action="buscar-registros"
+               aria-label="Buscar en registros"/>
       </div>
 
-      <!-- Acciones -->
-      <div class="form-actions" style="margin-bottom: 20px;">
-        <button type="button" class="btn-success" onclick="App.exportar.csv()">📥 Exportar CSV</button>
-        <button type="button" class="btn-danger" onclick="PDFExport.generate()">📄 Exportar PDF</button>
-        <button type="button" class="btn-warning" onclick="Backup.export()">💾 Backup</button>
-        <button type="button" class="btn-primary" onclick="Backup.import()">📂 Restaurar</button>
+      <!-- Acciones de Exportación -->
+      <div class="form-actions" style="margin-bottom: 20px;" role="toolbar" aria-label="Acciones de exportación">
+        <button type="button" class="btn-success" data-action="exportar-csv" aria-label="Exportar datos a CSV">
+          📥 Exportar CSV
+        </button>
+        <button type="button" class="btn-danger" data-action="exportar-pdf" aria-label="Exportar datos a PDF">
+          📄 Exportar PDF
+        </button>
+        <button type="button" class="btn-warning" data-action="backup-exportar" aria-label="Crear copia de seguridad">
+          💾 Backup
+        </button>
+        <button type="button" class="btn-primary" data-action="backup-importar" aria-label="Restaurar desde backup">
+          📂 Restaurar
+        </button>
       </div>
 
-      <!-- Tabla -->
-      <div class="table-container">
-        <table id="tablaControles">
+      <!-- Tabla de Registros -->
+      <div class="table-container" role="region" aria-label="Tabla de registros de control">
+        <table id="tablaControles" role="table">
           <thead>
-            <tr>
-              <th onclick="Filters.sortBy('fecha')">Fecha ⬍</th>
-              <th onclick="Filters.sortBy('region')">Región ⬍</th>
-              <th onclick="Filters.sortBy('puntoControl')">Punto ⬍</th>
-              <th>Horario</th>
-              <th>Horas Total</th>
-              <th onclick="Filters.sortBy('vehiculosControlados')">Controlados ⬍</th>
-              <th onclick="Filters.sortBy('vehiculosSobrepeso')">Sobrepeso ⬍</th>
-              <th onclick="Filters.sortBy('vehiculosInfraccionados')">Infracciones ⬍</th>
-              <th>Prom/H</th>
-              <th onclick="Filters.sortBy('porcentajeSobrepeso')">% Sobre ⬍</th>
-              <th onclick="Filters.sortBy('porcentajeInfraccion')">% Infrac ⬍</th>
-              <th>Observaciones</th>
-              <th>Acciones</th>
+            <tr role="row">
+              <th role="columnheader" data-action="sort" data-column="fecha" tabindex="0" aria-sort="none">
+                Fecha <span aria-hidden="true">⬍</span>
+              </th>
+              <th role="columnheader" data-action="sort" data-column="region" tabindex="0" aria-sort="none">
+                Región <span aria-hidden="true">⬍</span>
+              </th>
+              <th role="columnheader" data-action="sort" data-column="puntoControl" tabindex="0" aria-sort="none">
+                Punto <span aria-hidden="true">⬍</span>
+              </th>
+              <th role="columnheader">Horario</th>
+              <th role="columnheader">Horas Total</th>
+              <th role="columnheader" data-action="sort" data-column="vehiculosControlados" tabindex="0" aria-sort="none">
+                Controlados <span aria-hidden="true">⬍</span>
+              </th>
+              <th role="columnheader" data-action="sort" data-column="vehiculosSobrepeso" tabindex="0" aria-sort="none">
+                Sobrepeso <span aria-hidden="true">⬍</span>
+              </th>
+              <th role="columnheader" data-action="sort" data-column="vehiculosInfraccionados" tabindex="0" aria-sort="none">
+                Infracciones <span aria-hidden="true">⬍</span>
+              </th>
+              <th role="columnheader">Prom/H</th>
+              <th role="columnheader" data-action="sort" data-column="porcentajeSobrepeso" tabindex="0" aria-sort="none">
+                % Sobre <span aria-hidden="true">⬍</span>
+              </th>
+              <th role="columnheader" data-action="sort" data-column="porcentajeInfraccion" tabindex="0" aria-sort="none">
+                % Infrac <span aria-hidden="true">⬍</span>
+              </th>
+              <th role="columnheader">Observaciones</th>
+              <th role="columnheader">Acciones</th>
             </tr>
           </thead>
-          <tbody id="tablaCuerpo"></tbody>
+          <tbody id="tablaCuerpo" role="rowgroup"></tbody>
         </table>
-        <p id="mensajeVacio" style="text-align:center;color:#6c757d;margin-top:30px;">No hay registros guardados.</p>
+        <p id="mensajeVacio" style="text-align:center;color:#6c757d;margin-top:30px;" role="status">
+          No hay registros guardados.
+        </p>
       </div>
 
-      <div id="pagination" class="pagination"></div>
-    </div>
+      <!-- Paginación -->
+      <nav id="pagination" class="pagination" role="navigation" aria-label="Paginación de registros"></nav>
+    </section>
 
-    <!-- Pestaña 3: Dashboard -->
-    <div id="estadisticas-tab" class="tab-content" role="tabpanel">
+    <!-- ============================================
+         PESTAÑA 3: DASHBOARD DE ESTADÍSTICAS
+         ============================================ -->
+    <section id="estadisticas-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-estadisticas">
       <h2>Dashboard de Estadísticas</h2>
-      <div class="stats-grid">
-        <div class="stat-card"><h3>Total Controles</h3><p id="statTotalControles">0</p></div>
-        <div class="stat-card"><h3>Total Horas</h3><p id="statTotalHoras">00:00:00</p></div>
-        <div class="stat-card"><h3>Total Vehículos</h3><p id="statTotalVehiculos">0</p></div>
-        <div class="stat-card"><h3>Sobrepeso</h3><p id="statTotalSobrepeso">0</p></div>
-        <div class="stat-card"><h3>Infracciones</h3><p id="statTotalInfracciones">0</p></div>
-        <div class="stat-card"><h3>Prom. Veh/Hora</h3><p id="statPromedioGeneralVehiculosHora">0</p></div>
-        <div class="stat-card"><h3>% Sobrepeso</h3><p id="statPorcentajeGeneralSobrepeso">0%</p></div>
-        <div class="stat-card"><h3>% Infracciones</h3><p id="statPorcentajeGeneralInfracciones">0%</p></div>
+      
+      <div class="stats-grid" role="region" aria-label="Estadísticas generales">
+        <div class="stat-card">
+          <h3>Total Controles</h3>
+          <p id="statTotalControles" aria-label="Total de controles realizados">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Total Horas</h3>
+          <p id="statTotalHoras" aria-label="Total de horas de control">00:00:00</p>
+        </div>
+        <div class="stat-card">
+          <h3>Total Vehículos</h3>
+          <p id="statTotalVehiculos" aria-label="Total de vehículos controlados">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Sobrepeso</h3>
+          <p id="statTotalSobrepeso" aria-label="Total de vehículos con sobrepeso">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Infracciones</h3>
+          <p id="statTotalInfracciones" aria-label="Total de infracciones">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Prom. Veh/Hora</h3>
+          <p id="statPromedioGeneralVehiculosHora" aria-label="Promedio general de vehículos por hora">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>% Sobrepeso</h3>
+          <p id="statPorcentajeGeneralSobrepeso" aria-label="Porcentaje general de sobrepeso">0%</p>
+        </div>
+        <div class="stat-card">
+          <h3>% Infracciones</h3>
+          <p id="statPorcentajeGeneralInfracciones" aria-label="Porcentaje general de infracciones">0%</p>
+        </div>
       </div>
-      <div class="charts-grid">
-        <div class="chart-container"><h3>Controles por Región</h3><canvas id="chartRegiones"></canvas></div>
-        <div class="chart-container"><h3>Tendencia Temporal</h3><canvas id="chartTemporal"></canvas></div>
-        <div class="chart-container"><h3>Distribución de Infracciones</h3><canvas id="chartInfracciones"></canvas></div>
-        <div class="chart-container"><h3>Top 10 Puntos de Control</h3><canvas id="chartTopPuntos"></canvas></div>
-      </div>
-    </div>
 
-    <!-- Pestaña 4: Analytics -->
-    <div id="analytics-tab" class="tab-content" role="tabpanel">
+      <div class="charts-grid" role="region" aria-label="Gráficos estadísticos">
+        <div class="chart-container">
+          <h3>Controles por Región</h3>
+          <canvas id="chartRegiones" role="img" aria-label="Gráfico de controles por región"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3>Tendencia Temporal</h3>
+          <canvas id="chartTemporal" role="img" aria-label="Gráfico de tendencia temporal"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3>Distribución de Infracciones</h3>
+          <canvas id="chartInfracciones" role="img" aria-label="Gráfico de distribución de infracciones"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3>Top 10 Puntos de Control</h3>
+          <canvas id="chartTopPuntos" role="img" aria-label="Gráfico de top 10 puntos de control"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================
+         PESTAÑA 4: ANALYTICS AVANZADO
+         ============================================ -->
+    <section id="analytics-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-analytics">
       <h2>Análisis Avanzado</h2>
+      
       <div class="analytics-section">
         <h3>📊 Comparativas Temporales</h3>
         <div class="comparison-cards">
-          <div class="comparison-card"><h4>Este Mes vs Mes Anterior</h4><div id="comparisonMes"></div></div>
-          <div class="comparison-card"><h4>Este Año vs Año Anterior</h4><div id="comparisonAnio"></div></div>
+          <div class="comparison-card">
+            <h4>Este Mes vs Mes Anterior</h4>
+            <div id="comparisonMes" aria-live="polite"></div>
+          </div>
+          <div class="comparison-card">
+            <h4>Este Año vs Año Anterior</h4>
+            <div id="comparisonAnio" aria-live="polite"></div>
+          </div>
         </div>
       </div>
+
       <div class="analytics-section">
         <h3>🏆 Rankings</h3>
         <div class="rankings-grid">
-          <div class="ranking-card"><h4>Top 5 Regiones con Más Controles</h4><div id="rankingRegiones"></div></div>
-          <div class="ranking-card"><h4>Puntos con Mayor % de Infracciones</h4><div id="rankingInfracciones"></div></div>
+          <div class="ranking-card">
+            <h4>Top 5 Regiones con Más Controles</h4>
+            <div id="rankingRegiones" role="list"></div>
+          </div>
+          <div class="ranking-card">
+            <h4>Puntos con Mayor % de Infracciones</h4>
+            <div id="rankingInfracciones" role="list"></div>
+          </div>
         </div>
       </div>
+
       <div class="analytics-section">
         <h3>🔮 Predicciones y Tendencias</h3>
-        <div id="predictions"></div>
+        <div id="predictions" aria-live="polite"></div>
       </div>
-    </div>
+    </section>
 
-    <!-- Pestaña 5: Calendario -->
-    <div id="calendario-tab" class="tab-content" role="tabpanel">
+    <!-- ============================================
+         PESTAÑA 5: CALENDARIO
+         ============================================ -->
+    <section id="calendario-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-calendario">
       <h2>Calendario de Controles</h2>
-      <div id="calendar"></div>
-    </div>
+      <div id="calendar" role="application" aria-label="Calendario de controles"></div>
+    </section>
 
-    <!-- Pestaña 6: Mapa -->
-    <div id="mapa-tab" class="tab-content" role="tabpanel">
+    <!-- ============================================
+         PESTAÑA 6: MAPA INTEGRADO
+         ============================================ -->
+    <section id="mapa-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-mapa">
       <h2>Mapa de Puntos de Control</h2>
-      <div class="map-controls">
-        <button class="btn-primary" onclick="MapModule.showAll()">Mostrar Todos</button>
-        <button class="btn-secondary" onclick="MapModule.filterByInfractions()">Filtrar por Infracciones</button>
+      
+      <div class="map-controls" role="toolbar" aria-label="Controles del mapa">
+        <button class="btn-primary" data-action="mapa-mostrar-todos">Mostrar Todos</button>
+        <button class="btn-secondary" data-action="mapa-filtrar-infracciones">Filtrar por Infracciones</button>
+        <a href="MAPA.HTML" class="btn-success" target="_blank" rel="noopener noreferrer">
+          🗺️ Abrir Mapa Completo
+        </a>
       </div>
-      <div id="map" style="height: 600px; border-radius: 8px;"></div>
-    </div>
+      
+      <div id="map" 
+           style="height: 600px; border-radius: 8px;" 
+           role="application" 
+           aria-label="Mapa interactivo de puntos de control"></div>
+    </section>
 
-    <!-- Pestaña 7: Puntos -->
-    <div id="puntos-tab" class="tab-content" role="tabpanel">
+    <!-- ============================================
+         PESTAÑA 7: ADMINISTRACIÓN DE PUNTOS
+         ============================================ -->
+    <section id="puntos-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-puntos">
       <h2>Administrar Puntos de Control</h2>
-      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
-        <button type="button" class="btn-success" onclick="App.ui.abrirModalNuevoPunto()">+ Agregar Nuevo Punto</button>
-        <button type="button" class="btn-primary" onclick="CoordenadasHelper.importarCSV()">📥 Importar Coordenadas CSV</button>
-        <button type="button" class="btn-secondary" onclick="CoordenadasHelper.descargarPlantillaCSV()">📄 Plantilla CSV</button>
+      
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;" role="toolbar" aria-label="Acciones de puntos">
+        <button type="button" 
+                class="btn-success" 
+                data-action="nuevo-punto"
+                aria-label="Agregar nuevo punto de control">
+          + Agregar Nuevo Punto
+        </button>
+        <button type="button" 
+                class="btn-primary" 
+                data-action="importar-coordenadas"
+                aria-label="Importar coordenadas desde CSV">
+          📥 Importar Coordenadas CSV
+        </button>
+        <button type="button" 
+                class="btn-secondary" 
+                data-action="descargar-plantilla-csv"
+                aria-label="Descargar plantilla CSV">
+          📄 Plantilla CSV
+        </button>
       </div>
-      <div class="table-container">
-        <table id="tablaPuntos">
+
+      <div class="table-container" role="region" aria-label="Tabla de puntos de control">
+        <table id="tablaPuntos" role="table">
           <thead>
-            <tr>
-              <th>Punto</th>
-              <th>Región</th>
-              <th>Comuna</th>
-              <th>Tipo</th>
-              <th>Ruta/Km</th>
-              <th style="text-align:center;">GPS</th>
-              <th>Coordenadas</th>
-              <th>Acciones</th>
+            <tr role="row">
+              <th role="columnheader">Punto</th>
+              <th role="columnheader">Región</th>
+              <th role="columnheader">Comuna</th>
+              <th role="columnheader">Tipo</th>
+              <th role="columnheader">Ruta/Km</th>
+              <th role="columnheader" style="text-align:center;">GPS</th>
+              <th role="columnheader">Coordenadas</th>
+              <th role="columnheader">Acciones</th>
             </tr>
           </thead>
-          <tbody id="tablaPuntosCuerpo"></tbody>
+          <tbody id="tablaPuntosCuerpo" role="rowgroup"></tbody>
         </table>
       </div>
-    </div>
+    </section>
   </div>
 
-  <!-- Modal Punto -->
-  <div id="modalNuevoPunto" class="modal" role="dialog" aria-hidden="true">
+  <!-- ============================================
+       MODAL: NUEVO/EDITAR PUNTO
+       ============================================ -->
+  <div id="modalNuevoPunto" class="modal" role="dialog" aria-hidden="true" aria-labelledby="modalTitulo" aria-modal="true">
     <div class="modal-content">
-      <span class="close" onclick="App.ui.cerrarModalNuevoPunto()">&times;</span>
+      <button class="close" data-action="cerrar-modal-punto" aria-label="Cerrar modal">&times;</button>
       <h2 id="modalTitulo">Agregar Punto de Control</h2>
-      <form id="formNuevoPunto">
+      
+      <form id="formNuevoPunto" novalidate>
         <input type="hidden" id="editandoPuntoNombre"/>
 
-        <h3 style="margin-top:0;border-bottom:2px solid var(--primary-color);padding-bottom:10px;">📍 Información Básica</h3>
+        <h3 style="margin-top:0;border-bottom:2px solid var(--primary-color);padding-bottom:10px;">
+          📍 Información Básica
+        </h3>
+        
         <div class="form-grid">
           <div class="form-group">
             <label for="nuevoPuntoNombre">Nombre del Punto <span class="required">*</span></label>
-            <input type="text" id="nuevoPuntoNombre" required/>
+            <input type="text" 
+                   id="nuevoPuntoNombre" 
+                   name="nombrePunto" 
+                   required 
+                   aria-required="true"
+                   maxlength="100"/>
           </div>
+
           <div class="form-group">
             <label for="nuevoPuntoRegion">Región <span class="required">*</span></label>
-            <input type="text" id="nuevoPuntoRegion" required/>
+            <input type="text" 
+                   id="nuevoPuntoRegion" 
+                   name="regionPunto" 
+                   required 
+                   aria-required="true"
+                   maxlength="100"/>
           </div>
+
           <div class="form-group">
             <label for="nuevoPuntoComuna">Comuna <span class="required">*</span></label>
-            <input type="text" id="nuevoPuntoComuna" required/>
+            <input type="text" 
+                   id="nuevoPuntoComuna" 
+                   name="comunaPunto" 
+                   required 
+                   aria-required="true"
+                   maxlength="100"/>
           </div>
+
           <div class="form-group">
             <label for="nuevoPuntoProvincia">Provincia <span class="required">*</span></label>
-            <input type="text" id="nuevoPuntoProvincia" required/>
+            <input type="text" 
+                   id="nuevoPuntoProvincia" 
+                   name="provinciaPunto" 
+                   required 
+                   aria-required="true"
+                   maxlength="100"/>
           </div>
+
           <div class="form-group">
             <label for="nuevoPuntoTipo">Tipo de Control <span class="required">*</span></label>
-            <select id="nuevoPuntoTipo" required>
+            <select id="nuevoPuntoTipo" name="tipoPunto" required aria-required="true">
               <option value="Pista de Pesaje">Pista de Pesaje</option>
               <option value="Calzada">Calzada</option>
             </select>
           </div>
+
           <div class="form-group">
             <label for="nuevoPuntoFoso">Foso <span class="required">*</span></label>
-            <select id="nuevoPuntoFoso" required>
+            <select id="nuevoPuntoFoso" name="fosoPunto" required aria-required="true">
               <option value="Si">Sí</option>
               <option value="No">No</option>
             </select>
           </div>
+
           <div class="form-group">
             <label for="nuevoPuntoRuta">Ruta <span class="required">*</span></label>
-            <input type="text" id="nuevoPuntoRuta" required/>
+            <input type="text" 
+                   id="nuevoPuntoRuta" 
+                   name="rutaPunto" 
+                   required 
+                   aria-required="true"
+                   maxlength="50"/>
           </div>
+
           <div class="form-group">
             <label for="nuevoPuntoKm">Kilómetro <span class="required">*</span></label>
-            <input type="text" id="nuevoPuntoKm" required/>
+            <input type="text" 
+                   id="nuevoPuntoKm" 
+                   name="kmPunto" 
+                   required 
+                   aria-required="true"
+                   maxlength="20"/>
           </div>
+
           <div class="form-group">
             <label for="nuevoPuntoSentido">Sentido de Control <span class="required">*</span></label>
-            <input type="text" id="nuevoPuntoSentido" required/>
+            <input type="text" 
+                   id="nuevoPuntoSentido" 
+                   name="sentidoPunto" 
+                   required 
+                   aria-required="true"
+                   maxlength="100"/>
           </div>
         </div>
 
-        <h3 style="margin-top:30px;border-bottom:2px solid var(--success-color);padding-bottom:10px;">🌍 Coordenadas GPS</h3>
+        <h3 style="margin-top:30px;border-bottom:2px solid var(--success-color);padding-bottom:10px;">
+          🌍 Coordenadas GPS
+        </h3>
+        
         <div class="form-grid">
           <div class="form-group">
-            <label for="nuevoPuntoLat">Latitud <small style="color:var(--text-secondary);">(Ej: -18.537829)</small></label>
-            <input type="number" id="nuevoPuntoLat" step="0.000001" min="-90" max="90" placeholder="-33.4489" onchange="CoordenadasHelper.validar('nuevoPuntoLat')"/>
-            <small id="latError" style="color: var(--danger-color); display: none;">⚠️ Latitud inválida</small>
+            <label for="nuevoPuntoLat">
+              Latitud 
+              <small style="color:var(--text-secondary);">(Ej: -18.537829)</small>
+            </label>
+            <input type="number" 
+                   id="nuevoPuntoLat" 
+                   name="latPunto" 
+                   step="0.000001" 
+                   min="-90" 
+                   max="90" 
+                   placeholder="-33.4489"
+                   data-action="validar-coordenada"
+                   aria-describedby="latError"/>
+            <small id="latError" class="error-message hidden" role="alert">⚠️ Latitud inválida (-90 a 90)</small>
           </div>
+
           <div class="form-group">
-            <label for="nuevoPuntoLng">Longitud <small style="color:var(--text-secondary);">(Ej: -70.771886)</small></label>
-            <input type="number" id="nuevoPuntoLng" step="0.000001" min="-180" max="180" placeholder="-70.6693" onchange="CoordenadasHelper.validar('nuevoPuntoLng')"/>
-            <small id="lngError" style="color: var(--danger-color); display: none;">⚠️ Longitud inválida</small>
+            <label for="nuevoPuntoLng">
+              Longitud 
+              <small style="color:var(--text-secondary);">(Ej: -70.771886)</small>
+            </label>
+            <input type="number" 
+                   id="nuevoPuntoLng" 
+                   name="lngPunto" 
+                   step="0.000001" 
+                   min="-180" 
+                   max="180" 
+                   placeholder="-70.6693"
+                   data-action="validar-coordenada"
+                   aria-describedby="lngError"/>
+            <small id="lngError" class="error-message hidden" role="alert">⚠️ Longitud inválida (-180 a 180)</small>
           </div>
         </div>
 
+        <!-- Ayuda para GPS -->
         <div style="background: var(--bg-secondary); padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid var(--info-color);">
           <h4 style="margin:0 0 10px 0; font-size:14px;">💡 ¿Cómo obtener coordenadas?</h4>
           <ol style="margin:0; padding-left:20px; font-size:13px;">
-            <li>Abre <a href="https://www.google.com/maps" target="_blank" style="color: var(--primary-color);">Google Maps</a></li>
+            <li>Abre <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color);">Google Maps</a></li>
             <li>Busca el punto de control</li>
             <li>Click derecho → "¿Qué hay aquí?"</li>
             <li>Copia las coordenadas (aparecen abajo)</li>
           </ol>
           <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
-            <button type="button" class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="CoordenadasHelper.obtenerUbicacion()">📍 Usar Mi Ubicación</button>
-            <button type="button" class="btn-secondary" style="font-size:12px;padding:6px 12px;" onclick="CoordenadasHelper.abrirMaps()">🗺️ Abrir Google Maps</button>
+            <button type="button" 
+                    class="btn-secondary" 
+                    style="font-size:12px;padding:6px 12px;" 
+                    data-action="usar-ubicacion"
+                    aria-label="Usar mi ubicación actual">
+              📍 Usar Mi Ubicación
+            </button>
+            <button type="button" 
+                    class="btn-secondary" 
+                    style="font-size:12px;padding:6px 12px;" 
+                    data-action="abrir-maps"
+                    aria-label="Abrir Google Maps">
+              🗺️ Abrir Google Maps
+            </button>
           </div>
         </div>
 
-        <div id="previewMap" style="height: 200px; border-radius: 8px; margin: 15px 0; border: 2px solid var(--border-color); display: none;"></div>
-        <button type="button" class="btn-secondary" onclick="CoordenadasHelper.previsualizarMapa()" style="width: 100%; margin-bottom: 15px;">👁️ Previsualizar en Mapa</button>
+        <!-- Previsualización del Mapa -->
+        <div id="previewMap" 
+             style="height: 200px; border-radius: 8px; margin: 15px 0; border: 2px solid var(--border-color); display: none;"
+             role="application"
+             aria-label="Previsualización del mapa"></div>
+        
+        <button type="button" 
+                class="btn-secondary" 
+                data-action="previsualizar-mapa" 
+                style="width: 100%; margin-bottom: 15px;">
+          👁️ Previsualizar en Mapa
+        </button>
 
+        <!-- Acciones del Modal -->
         <div class="form-actions" style="justify-content:flex-end;">
-          <button type="button" class="btn-secondary" onclick="App.ui.cerrarModalNuevoPunto()">Cancelar</button>
-          <button type="submit" class="btn-primary" id="btnGuardarPunto">💾 Guardar Punto</button>
+          <button type="button" 
+                  class="btn-secondary" 
+                  data-action="cerrar-modal-punto">
+            Cancelar
+          </button>
+          <button type="submit" 
+                  class="btn-primary" 
+                  id="btnGuardarPunto"
+                  data-loading="false">
+            <span class="btn-text">💾 Guardar Punto</span>
+            <span class="btn-spinner hidden">⏳ Guardando...</span>
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal Login -->
-  <div id="modalLogin" class="modal" role="dialog" aria-hidden="true">
+  <!-- ============================================
+       MODAL: LOGIN
+       ============================================ -->
+  <div id="modalLogin" class="modal" role="dialog" aria-hidden="true" aria-labelledby="modalLoginTitle" aria-modal="true">
     <div class="modal-content modal-small">
-      <span class="close" onclick="Users.closeLoginModal()">&times;</span>
-      <h2>Iniciar Sesión</h2>
-      <form id="loginForm">
+      <button class="close" data-action="cerrar-modal-login" aria-label="Cerrar modal">&times;</button>
+      <h2 id="modalLoginTitle">Iniciar Sesión</h2>
+      
+      <form id="loginForm" novalidate>
         <div class="form-group">
           <label for="username">Usuario</label>
-          <input type="text" id="username" required/>
+          <input type="text" 
+                 id="username" 
+                 name="username" 
+                 required 
+                 aria-required="true"
+                 autocomplete="username"
+                 maxlength="50"/>
         </div>
+        
         <div class="form-group">
           <label for="password">Contraseña</label>
-          <input type="password" id="password" required/>
+          <input type="password" 
+                 id="password" 
+                 name="password" 
+                 required 
+                 aria-required="true"
+                 autocomplete="current-password"
+                 maxlength="100"/>
         </div>
+        
         <div class="form-actions">
-          <button type="submit" class="btn-primary">Entrar</button>
+          <button type="submit" class="btn-primary" data-loading="false">
+            <span class="btn-text">Entrar</span>
+            <span class="btn-spinner hidden">⏳</span>
+          </button>
         </div>
       </form>
-      <p style="text-align: center; margin-top: 10px; font-size: 12px;">Demo: admin/admin | editor/editor | viewer/viewer</p>
+      
+      <div style="background: var(--bg-secondary); padding: 10px; border-radius: 4px; margin-top: 15px; border-left: 3px solid var(--warning-color);">
+        <p style="text-align: center; margin: 0; font-size: 12px; color: var(--text-secondary);">
+          <strong>⚠️ DEMO:</strong> admin/admin | editor/editor | viewer/viewer
+        </p>
+        <p style="text-align: center; margin: 5px 0 0 0; font-size: 11px; color: var(--text-muted);">
+          Sistema solo para demostración - No usar en producción
+        </p>
+      </div>
     </div>
   </div>
 
-  <!-- Toast -->
-  <div id="toast" class="toast"></div>
+  <!-- ============================================
+       TOAST DE NOTIFICACIONES
+       ============================================ -->
+  <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true"></div>
 
-  <!-- Scripts -->
-  <script src="script.js"></script>
-  <script src="Modules/horas-control.js"></script>
-  <script src="Modules/coordenadas-helper.js"></script>
-  <script src="Modules/filters.js"></script>
-  <script src="Modules/charts.js"></script>
-  <script src="Modules/pdf-export.js"></script>
-  <script src="Modules/backup.js"></script>
-  <script src="Modules/calendar.js"></script>
-  <script src="Modules/notifications.js"></script>
-  <script src="Modules/maps.js"></script>
-  <script src="Modules/users.js"></script>
-  <script src="Modules/analytics.js"></script>
+  <!-- ============================================
+       SCRIPTS
+       ============================================ -->
+  <!-- Script principal -->
+  <script src="script.js" defer></script>
+  
+  <!-- Módulos -->
+  <script src="Modules/horas-control.js" defer></script>
+  <script src="Modules/coordenadas-helper.js" defer></script>
+  <script src="Modules/filters.js" defer></script>
+  <script src="Modules/charts.js" defer></script>
+  <script src="Modules/pdf-export.js" defer></script>
+  <script src="Modules/backup.js" defer></script>
+  <script src="Modules/calendar.js" defer></script>
+  <script src="Modules/notifications.js" defer></script>
+  <script src="Modules/maps.js" defer></script>
+  <script src="Modules/users.js" defer></script>
+  <script src="Modules/analytics.js" defer></script>
 
-  <!-- PWA -->
+  <!-- Event Delegation Manager (NUEVO) -->
+  <script defer>
+    /* ==========================================
+       EVENT DELEGATION MANAGER
+       Maneja todos los eventos sin onclick inline
+       ========================================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      // Delegación global de clicks
+      document.addEventListener('click', (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+
+        const action = target.dataset.action;
+        
+        // Acciones de la barra superior
+        if (action === 'show-login') Users?.showLoginModal();
+        if (action === 'toggle-notifications') Notifications?.togglePanel();
+        if (action === 'toggle-theme') App?.toggleDarkMode();
+        if (action === 'clear-notifications') Notifications?.clearAll();
+
+        // Navegación de tabs
+        if (action === 'show-tab') {
+          const tabId = target.dataset.tab;
+          if (tabId && App?.ui) App.ui.showTab(tabId, e);
+        }
+
+        // Formulario principal
+        if (action === 'filter-region') App?.ui?.actualizarSelectPuntos?.(e.target.value);
+        if (action === 'nuevo-punto') App?.ui?.abrirModalNuevoPunto();
+        if (action === 'limpiar-form') App?.form?.limpiar();
+
+        // Horas y observaciones
+        if (action === 'ajustar-horas-manual') HorasControl?.ajustarManual();
+        if (action === 'aplicar-horas-manual') HorasControl?.aplicarManual();
+        if (action === 'plantilla-obs') {
+          const texto = target.dataset.texto;
+          if (texto) HorasControl?.agregarPlantilla(texto);
+        }
+        if (action === 'limpiar-obs') HorasControl?.limpiarObservaciones();
+
+        // Filtros
+        if (action === 'toggle-filters') Filters?.togglePanel();
+        if (action === 'aplicar-filtros') Filters?.apply();
+        if (action === 'limpiar-filtros') Filters?.clear();
+
+        // Exportación
+        if (action === 'exportar-csv') App?.exportar?.csv();
+        if (action === 'exportar-pdf') PDFExport?.generate();
+        if (action === 'backup-exportar') Backup?.export();
+        if (action === 'backup-importar') Backup?.import();
+
+        // Ordenamiento de tabla
+        if (action === 'sort') {
+          const column = target.dataset.column;
+          if (column) Filters?.sortBy(column);
+        }
+
+        // Puntos de control
+        if (action === 'importar-coordenadas') CoordenadasHelper?.importarCSV();
+        if (action === 'descargar-plantilla-csv') CoordenadasHelper?.descargarPlantillaCSV();
+
+        // Modal de punto
+        if (action === 'cerrar-modal-punto') App?.ui?.cerrarModalNuevoPunto();
+        if (action === 'validar-coordenada') CoordenadasHelper?.validar(target.id);
+        if (action === 'usar-ubicacion') CoordenadasHelper?.obtenerUbicacion();
+        if (action === 'abrir-maps') CoordenadasHelper?.abrirMaps();
+        if (action === 'previsualizar-mapa') CoordenadasHelper?.previsualizarMapa();
+
+        // Modal de login
+        if (action === 'cerrar-modal-login') Users?.closeLoginModal();
+
+        // Mapa
+        if (action === 'mapa-mostrar-todos') MapModule?.showAll();
+        if (action === 'mapa-filtrar-infracciones') MapModule?.filterByInfractions();
+      });
+
+      // Delegación de cambios (change events)
+      document.addEventListener('change', (e) => {
+        const target = e.target;
+        const action = target.dataset.action;
+
+        if (action === 'calcular-horas') HorasControl?.calcularTotal();
+        if (action === 'calcular-promedios') HorasControl?.calcularPromedios();
+        if (action === 'select-punto') {
+          const datos = App?.data?.puntos?.[target.value];
+          if (datos) {
+            document.getElementById('region').value = datos.region || '';
+            document.getElementById('comuna').value = datos.comuna || '';
+            document.getElementById('provincia').value = datos.provincia || '';
+            document.getElementById('foso').value = datos.foso || '';
+            document.getElementById('ruta').value = datos.ruta || '';
+            document.getElementById('kilometro').value = datos.kilometro || '';
+            document.getElementById('sentido').value = datos.sentido || '';
+          }
+        }
+      });
+
+      // Delegación de input (keyup, input)
+      document.addEventListener('input', (e) => {
+        const target = e.target;
+        const action = target.dataset.action;
+
+        if (action === 'actualizar-contador') HorasControl?.actualizarContador(target);
+        if (action === 'buscar-registros') Filters?.search(target.value);
+      });
+
+      // Cerrar modales al hacer click fuera
+      window.addEventListener('click', (e) => {
+        if (e.target.id === 'modalNuevoPunto') App?.ui?.cerrarModalNuevoPunto();
+        if (e.target.id === 'modalLogin') Users?.closeLoginModal();
+      });
+
+      console.log('✅ Event Delegation inicializado');
+    });
+  </script>
+
+  <!-- PWA Service Worker -->
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('✅ Service Worker registrado'))
-        .catch(err => console.log('❌ Error SW:', err));
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(registration => {
+            console.log('✅ Service Worker registrado:', registration.scope);
+          })
+          .catch(error => {
+            console.log('❌ Error al registrar Service Worker:', error);
+          });
+      });
     }
+
+    // PWA Install Prompt
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
+      
+      // Notificar al usuario que puede instalar
       if (typeof Notifications !== 'undefined') {
         Notifications.add('📱 ¡Puedes instalar esta app en tu dispositivo!', 'info');
+      }
+    });
+
+    // Detectar instalación exitosa
+    window.addEventListener('appinstalled', () => {
+      console.log('✅ PWA instalada exitosamente');
+      deferredPrompt = null;
+      
+      if (typeof App !== 'undefined' && App.toast) {
+        App.toast('✅ App instalada correctamente', 'success');
       }
     });
   </script>
