@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión - Controles de Vialidad Chile</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        
+        /* Controles del mapa mejorados */
+        .legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+            line-height: 25px;
+        }
+        
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+            border-radius: 50%;
+        }
+        
+        .info-box {
+            padding: 6px 8px;
+            background: white;
+            background: rgba(255,255,255,0.95);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        h3 {
+            margin: 0 0 5px;
+            color: #333;
+        }
+        
+        h4 {
+            margin: 5px 0;
+            color: #555;
+        }
+        
+        /* Panel de control superior */
+        .control-panel {
+            padding: 10px;
+            background: white;
+            background: rgba(255,255,255,0.95);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            margin-bottom: 10px;
+            max-width: 350px;
+        }
+        
+        .control-panel input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .control-panel select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .control-panel button {
+            padding: 8px 15px;
+            margin: 5px 5px 5px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn-add {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-add:hover {
+            background: #45a049;
+        }
+        
+        .btn-export {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-export:hover {
+            background: #0b7dda;
+        }
+        
+        .btn-clear-filters {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-clear-filters:hover {
+            background: #da190b;
+        }
+        
+        /* Popup mejorado */
+        .custom-popup {
+            min-width: 250px;
+        }
+        
+        .popup-buttons {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+        
+        .popup-btn {
+            padding: 5px 10px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .popup-btn-maps {
+            background: #4285f4;
+        }
+        
+        .popup-btn-maps:hover {
+            background: #357ae8;
+        }
+        
+        .popup-btn-edit {
+            background: #ffa726;
+        }
+        
+        .popup-btn-edit:hover {
+            background: #fb8c00;
+        }
+        
+        .popup-btn-delete {
+            background: #ef5350;
+        }
+        
+        .popup-btn-delete:hover {
+            background: #e53935;
+        }
+        
+        /* Modal para formularios */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal.show {
+            display: block;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: #000;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .form-group input[type="number"] {
+            width: 100%;
+        }
+        
+        .form-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        
+        .form-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn-save {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-save:hover {
+            background: #45a049;
+        }
+        
+        .btn-cancel {
+            background: #f44336;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background: #da190b;
+        }
+        
+        /* Estilos para los filtros de tipo */
+        .filter-types {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+        }
+        
+        .filter-types label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .filter-types input[type="checkbox"] {
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        
+        /* Indicador de carga */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .control-panel {
+                max-width: 280px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+            }
+            
+            .legend {
+                font-size: 12px;
+                padding: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <!-- Modal para añadir/editar punto -->
+    <div id="pointModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h2 id="modalTitle">Añadir Punto de Control</h2>
+            </div>
+            
+            <form id="pointForm">
+                <div class="form-group">
+                    <label for="pointType">Tipo de Control:</label>
+                    <select id="pointType" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="plaza">Plaza Fija</option>
+                        <option value="control">Control Móvil</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pointName">Nombre/Sector:</label>
+                    <input type="text" id="pointName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pointRegion">Región:</label>
+                    <select id="pointRegion" required>
+                        <option value="">Seleccionar...</option>
+                        <option value="Arica y Parinacota">Arica y Parinacota</option>
+                        <option value="Tarapacá">Tarapacá</option>
+                        <option value="Antofagasta">Antofagasta</option>
+                        <option value="Atacama">Atacama</option>
+                        <option value="Coquimbo">Coquimbo</option>
+                        <option value="Valparaíso">Valparaíso</option>
+                        <option value="Metropolitana">Metropolitana</option>
+                        <option value="O'Higgins">O'Higgins</option>
+                        <option value="Maule">Maule</option>
+                        <option value="Ñuble">Ñuble</option>
+                        <option value="Biobío">Biobío</option>
+                        <option value="La Araucanía">La Araucanía</option>
+                        <option value="Los Ríos">Los Ríos</option>
+                        <option value="Los Lagos">Los Lagos</option>
+                        <option value="Aysén">Aysén</option>
+                        <option value="Magallanes">Magallanes</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pointRoute">Ruta:</label>
+                    <input type="text" id="pointRoute" placeholder="Ej: 5 Norte">
+                </div>
+                
+                <div class="form-group">
+                    <label for="pointKm">Kilómetro:</label>
+                    <input type="text" id="pointKm" placeholder="Ej: 1838">
+                </div>
+                
+                <div class="form-group">
+                    <label for="pointLat">Latitud:</label>
+                    <input type="number" id="pointLat" step="any" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pointLng">Longitud:</label>
+                    <input type="number" id="pointLng" step="any" required>
+                </div>
+                
+                <input type="hidden" id="pointId">
+                
+                <div class="form-buttons">
+                    <button type="button" class="btn-save" onclick="savePoint()">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                    <button type="button" class="btn-cancel" onclick="closeModal()">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Variables globales
+        var map;
+        var plazasFijas = L.layerGroup();
+        var controlesMoviles = L.layerGroup();
+        var allMarkers = {};
+        var currentEditingId = null;
+        
+        // Datos completos de Plazas Fijas (24 puntos)
+        var plazasFijasData = [
+            {id: 'PF001', region: "Tarapacá", nombre: "Huara HU-12", ruta: "5 Norte", km: "1838", lat: -19.997739, lng: -69.766263},
+            {id: 'PF002', region: "Tarapacá", nombre: "Huara HU-34", ruta: "5 Norte", km: "1838", lat: -19.997797, lng: -69.766434},
+            {id: 'PF003', region: "Antofagasta", nombre: "La Negra LN-34", ruta: "5 Norte", km: "1355", lat: -23.789458, lng: -70.316914},
+            {id: 'PF004', region: "Antofagasta", nombre: "La Negra LN-12", ruta: "5 Norte", km: "1355", lat: -23.789495, lng: -70.316574},
+            {id: 'PF005', region: "O'Higgins", nombre: "San Francisco de Mostazal FR-12", ruta: "5 Sur", km: "61", lat: -33.964529, lng: -70.709735},
+            {id: 'PF006', region: "O'Higgins", nombre: "San Francisco de Mostazal FR-34", ruta: "5 Sur", km: "61", lat: -33.964881, lng: -70.708998},
+            {id: 'PF007', region: "Biobío", nombre: "Los Angeles AN-12", ruta: "5 Sur", km: "498", lat: -37.367048, lng: -72.367948},
+            {id: 'PF008', region: "Biobío", nombre: "Los Ángeles AN-34", ruta: "5 Sur", km: "498", lat: -37.368307, lng: -72.367106},
+            {id: 'PF009', region: "Biobío", nombre: "Curalí CR-34", ruta: "156", km: "53", lat: -37.224960, lng: -72.960715},
+            {id: 'PF010', region: "Biobío", nombre: "Nicodahue NI-12", ruta: "156", km: "93", lat: -37.474015, lng: -72.717647},
+            {id: 'PF011', region: "La Araucanía", nombre: "Tijeral TJ-34", ruta: "180", km: "10.5", lat: -37.738045, lng: -72.614870},
+            {id: 'PF012', region: "Magallanes", nombre: "Kon-Aiken KA-12", ruta: "9", km: "31", lat: -52.916559, lng: -70.902656},
+            {id: 'PF013', region: "Magallanes", nombre: "Kon-Aiken KA-34", ruta: "9", km: "31", lat: -52.916555, lng: -70.902102},
+            {id: 'PF014', region: "Magallanes", nombre: "Monte Aymond AY-12", ruta: "255ch", km: "140.5", lat: -52.148840, lng: -69.513935},
+            {id: 'PF015', region: "Metropolitana", nombre: "Lampa LA-12", ruta: "5 Norte", km: "27.5", lat: -33.222327, lng: -70.764529},
+            {id: 'PF016', region: "Metropolitana", nombre: "Lampa LA-34", ruta: "5 Norte", km: "27.5", lat: -33.222808, lng: -70.764799},
+            {id: 'PF017', region: "Metropolitana", nombre: "Curacaví CU-12", ruta: "68", km: "47.25", lat: -33.408230, lng: -71.179480},
+            {id: 'PF018', region: "Metropolitana", nombre: "Curacaví CU-34", ruta: "68", km: "47.25", lat: -33.407462, lng: -71.181645},
+            {id: 'PF019', region: "Metropolitana", nombre: "El Monte MO-12", ruta: "78", km: "46", lat: -33.705253, lng: -70.999131},
+            {id: 'PF020', region: "Metropolitana", nombre: "El Monte MO-34", ruta: "78", km: "46", lat: -33.705411, lng: -70.998409},
+            {id: 'PF021', region: "Arica y Parinacota", nombre: "Chacalluta AR-12", ruta: "5 Norte", km: "2081", lat: -18.406526, lng: -70.297931},
+            {id: 'PF022', region: "Arica y Parinacota", nombre: "Chacalluta AR-34", ruta: "5 Norte", km: "2081", lat: -18.406775, lng: -70.298243},
+            {id: 'PF023', region: "Arica y Parinacota", nombre: "Chungará CH-12", ruta: "11ch", km: "185.5", lat: -18.279530, lng: -69.138751},
+            {id: 'PF024', region: "Arica y Parinacota", nombre: "Chungará CH-34", ruta: "11ch", km: "185.5", lat: -18.279807, lng: -69.138492}
+        ];
+        
+        // Datos completos de Controles Móviles (81 puntos)
+        var controlesMovilesData = [
+            {id: 'CM001', region: "Arica y Parinacota", sector: "ACHA PROVINCIA DE ARICA", ruta: "5", km: "2064", lat: -18.537829, lng: -70.255303},
+            {id: 'CM002', region: "Arica y Parinacota", sector: "ZAPAHUIRA PROVINCIA DE PARINACOTA", ruta: "11-Ch", km: "98.5", lat: -18.339152, lng: -69.590591},
+            {id: 'CM003', region: "Tarapacá", sector: "POZO ALMONTE PROVINCIA DEL TAMARUGAL", ruta: "5", km: "1811", lat: -20.236203, lng: -69.787294},
+            {id: 'CM004', region: "Tarapacá", sector: "RIO LOA 1 PROVINCIA DE IQUIQUE", ruta: "1", km: "268", lat: -21.415025, lng: -70.059022},
+            {id: 'CM005', region: "Tarapacá", sector: "RIO LOA 2 PROVINCIA DE IQUIQUE", ruta: "1", km: "268", lat: -21.415076, lng: -70.059194},
+            {id: 'CM006', region: "Antofagasta", sector: "MEJILLONES 1 PROVINCIA DE ANTOFAGASTA", ruta: "1", km: "63", lat: -23.087380, lng: -70.332448},
+            {id: 'CM007', region: "Antofagasta", sector: "MEJILLONES 2 PROVINCIA DE ANTOFAGASTA", ruta: "1", km: "63", lat: -23.087401, lng: -70.332650},
+            {id: 'CM008', region: "Antofagasta", sector: "TOCOPILLA PROVINCIA DE TOCOPILLA", ruta: "1", km: "180", lat: -22.115802, lng: -70.213745},
+            {id: 'CM009', region: "Antofagasta", sector: "PEDRO DE VALDIVIA AMBAS FAJAS PROVINCIA DE TOCOPILLA", ruta: "5", km: "1482", lat: -22.115802, lng: -70.213745},
+            {id: 'CM010', region: "Antofagasta", sector: "VALLE DE LA LUNA PROVINCIA DEL LOA", ruta: "23Ch", km: "95", lat: -22.927693, lng: -68.224515},
+            {id: 'CM011', region: "Atacama", sector: "MARIA ISABEL PROVINCIA DE COPIAPO", ruta: "C-35", km: "2", lat: -27.436160, lng: -70.267468},
+            {id: 'CM012', region: "Atacama", sector: "PUERTO PADRONES PROVINCIA DE COPIAPO", ruta: "C-314", km: "1", lat: -27.081232, lng: -70.810328},
+            {id: 'CM013', region: "Atacama", sector: "NANTOCO PROVINCIA DE COPIAPO", ruta: "C-411", km: "1", lat: -27.606291, lng: -70.445629},
+            {id: 'CM014', region: "Atacama", sector: "TERESITA PROVINCIA DE COPIAPO", ruta: "31 CH", km: "16", lat: -27.359355, lng: -70.227546},
+            {id: 'CM015', region: "Atacama", sector: "PORTEZUELO PROVINCIA DE CHAÑARAL", ruta: "5 NORTE", km: "992", lat: -26.339625, lng: -70.447644},
+            {id: 'CM016', region: "Atacama", sector: "BODEGUILLA PROVINCIA DE HUASCO", ruta: "C-46", km: "20", lat: -28.524797, lng: -70.981734},
+            {id: 'CM017', region: "Coquimbo", sector: "SAN JULIAN 1 PROVINCIA DEL LIMARI", ruta: "45", km: "20", lat: -30.661561, lng: -71.304297},
+            {id: 'CM018', region: "Coquimbo", sector: "SAN JULIAN 2 PROVINCIA DEL LIMARI", ruta: "45", km: "20", lat: -30.661432, lng: -71.304279},
+            {id: 'CM019', region: "Coquimbo", sector: "EL PEÑON 1 PROVINCIA DEL ELQUI", ruta: "D-51", km: "1", lat: -30.133391, lng: -71.223042},
+            {id: 'CM020', region: "Coquimbo", sector: "EL PEÑON 2 PROVINCIA DEL ELQUI", ruta: "D-51", km: "1", lat: -30.133391, lng: -71.223042},
+            {id: 'CM021', region: "Valparaíso", sector: "PEÑABLANCA PROVINCIA PETORCA", ruta: "E-35", km: "24", lat: -32.448949, lng: -71.095036},
+            {id: 'CM022', region: "Valparaíso", sector: "QUINTERO PROVINCIA VALPARAISO", ruta: "F-30-E", km: "61", lat: -32.792905, lng: -71.478674},
+            {id: 'CM023', region: "Valparaíso", sector: "AERÓDROMO PROVINCIA DE SAN ANTONIO", ruta: "66", km: "130", lat: -33.662425, lng: -71.596575},
+            {id: 'CM024', region: "Valparaíso", sector: "FUERTE AGUAYO 1 PROVINCIA DE VALPARAISO", ruta: "64", km: "39", lat: -32.932353, lng: -71.462508},
+            {id: 'CM025', region: "Valparaíso", sector: "FUERTE AGUAYO 2 PROVINCIA DE VALPARAISO", ruta: "64", km: "39", lat: -32.932458, lng: -71.461889},
+            {id: 'CM026', region: "Valparaíso", sector: "LO OROZCO 1 PROVINCIA DE VALPARAISO", ruta: "F-50", km: "7", lat: -33.218689, lng: -71.390701},
+            {id: 'CM027', region: "Valparaíso", sector: "LO OROZCO 2 PROVINCIA DE VALPARAISO", ruta: "F-50", km: "7", lat: -33.218810, lng: -71.390971},
+            {id: 'CM028', region: "Metropolitana", sector: "LO ECHEVERS PROVINCIA DE SANTIAGO", ruta: "G 16", km: "52.7", lat: -33.370143, lng: -70.771886},
+            {id: 'CM029', region: "Metropolitana", sector: "RINCONADA MAIPÚ SANTIAGO", ruta: "G 260", km: "1", lat: -33.507342, lng: -70.805888},
+            {id: 'CM030', region: "Metropolitana", sector: "SAN FRANCISCO PROVINCIA DE TALAGANTE", ruta: "G 78", km: "17.0", lat: -33.687141, lng: -70.974495},
+            {id: 'CM031', region: "Metropolitana", sector: "EL TREBAL PROVINCIA TALAGANTE", ruta: "G 256", km: "3", lat: -33.542868, lng: -70.843092},
+            {id: 'CM032', region: "Metropolitana", sector: "CALERA DE TANGO PROVINCIA DE TALAGANTE", ruta: "G 34", km: "4", lat: -33.631249, lng: -70.754536},
+            {id: 'CM033', region: "Metropolitana", sector: "POMAIRE PROVINCIA DE MELIPILLA", ruta: "G 78", km: "34", lat: -33.677451, lng: -71.152372},
+            {id: 'CM034', region: "Metropolitana", sector: "POLPAICO PROVINCIA DE CHACABUCO", ruta: "G 132", km: "9", lat: -33.164460, lng: -70.892218},
+            {id: 'CM035', region: "Metropolitana", sector: "QUILAPILUN PROVINCIA DE CHACABUCO", ruta: "G 131", km: "7.4", lat: -33.096786, lng: -70.751927},
+            {id: 'CM036', region: "Metropolitana", sector: "CHICAUMA PROVINCIA DE CHACABUCO", ruta: "G 16", km: "33.3", lat: -33.161986, lng: -70.894454},
+            {id: 'CM037', region: "Metropolitana", sector: "LA PUNTILLA PROVINCIA DE MAIPO", ruta: "G 46", km: "9.3", lat: -33.757318, lng: -70.815541},
+            {id: 'CM038', region: "Metropolitana", sector: "LA OBRA PROVINCIA CORDILLERA", ruta: "G 25", km: "16", lat: -33.592262, lng: -70.487612},
+            {id: 'CM039', region: "O'Higgins", sector: "ALCONES PROVINCIA DE CARDENAL CARO", ruta: "90", km: "80", lat: -34.394354, lng: -71.730351},
+            {id: 'CM040', region: "O'Higgins", sector: "PICHILEMU PROVINCIA DE CARDENAL CARO", ruta: "90", km: "125", lat: -34.380610, lng: -71.973629},
+            {id: 'CM041', region: "O'Higgins", sector: "PLACILLA PROVINCIA DE CARDENAL CARO", ruta: "90", km: "6", lat: -34.610319, lng: -71.040677},
+            {id: 'CM042', region: "O'Higgins", sector: "RANGUIL PROVINCIA DE COLCHAGUA", ruta: "I-70j", km: "13.2", lat: -34.847675, lng: -71.690801},
+            {id: 'CM043', region: "O'Higgins", sector: "PUMANQUE PROVINCIA DE COLCHAGUA", ruta: "I-60", km: "19", lat: -34.586253, lng: -71.645596},
+            {id: 'CM044', region: "Maule", sector: "PASO NEVADO 1 PROVINCIA DE TALCA", ruta: "115-CH", km: "54.6", lat: -35.708927, lng: -71.214082},
+            {id: 'CM045', region: "Maule", sector: "PASO NEVADO 2 PROVINCIA DE TALCA", ruta: "115-CH", km: "54.6", lat: -35.708829, lng: -71.213929},
+            {id: 'CM046', region: "Maule", sector: "CULENAR PROVINCIA DE CURICO", ruta: "K-40", km: "17.3", lat: -35.178936, lng: -71.554766},
+            {id: 'CM047', region: "Maule", sector: "PARRONAL PROVINCIA DE CURICO", ruta: "J-70-I", km: "39", lat: -35.037628, lng: -71.707862},
+            {id: 'CM048', region: "Maule", sector: "SAN BALDOMERO PROVINCIA DE LINARES", ruta: "126", km: "5.3", lat: -35.652029, lng: -71.813590},
+            {id: 'CM049', region: "Maule", sector: "LA ESCUELA PROVINCIA DE CAUQUENES", ruta: "128", km: "42", lat: -35.975692, lng: -72.199638},
+            {id: 'CM050', region: "Maule", sector: "El VALLE PROVINCIA DE CAUQUENES", ruta: "M-50", km: "22.3", lat: -35.876679, lng: -72.473035},
+            {id: 'CM051', region: "Biobío", sector: "PLANTA LAJA PROVINCIA DE BIOBIO", ruta: "Q-34", km: "34", lat: -37.298299, lng: -72.709483},
+            {id: 'CM052', region: "Biobío", sector: "CHILLICO PROVINCIA DE BIOBIO", ruta: "Q-90-O", km: "27", lat: -37.241897, lng: -72.630420},
+            {id: 'CM053', region: "Biobío", sector: "ANTUCO PROVINCIA DEL BIOBIO", ruta: "Q-45", km: "23", lat: -37.426346, lng: -72.072951},
+            {id: 'CM054', region: "Biobío", sector: "LAS HORTENCIAS PROVINCIA DEL BIOBIO", ruta: "Q-61-R", km: "5", lat: -37.512620, lng: -72.270314},
+            {id: 'CM055', region: "La Araucanía", sector: "HUEQUEN PROVINCIA DE MALLECO", ruta: "R-86", km: "89", lat: -37.850064, lng: -72.689536},
+            {id: 'CM056', region: "La Araucanía", sector: "SAN LUIS PROVINCIA DE CAUTIN", ruta: "S-16", km: "15.3", lat: -38.723431, lng: -72.913808},
+            {id: 'CM057', region: "La Araucanía", sector: "PURALACO PROVINCIA DE CAUTIN", ruta: "S-790", km: "16", lat: -39.304462, lng: -73.181026},
+            {id: 'CM058', region: "La Araucanía", sector: "CHAMPULLI PROVINCIA DE CAUTIN", ruta: "S-40", km: "17", lat: -38.695318, lng: -73.113203},
+            {id: 'CM059', region: "Los Ríos", sector: "LLANCAHUE PROVINCIA DE VALDIVIA", ruta: "206", km: "41", lat: -39.861085, lng: -73.180421},
+            {id: 'CM060', region: "Los Ríos", sector: "QUINCHILCA PROVINCIA DE VALDIVIA", ruta: "T-39", km: "11.2", lat: -39.816958, lng: -72.725913},
+            {id: 'CM061', region: "Los Ríos", sector: "PURINGUE PROVINCIA DE VALDIVIA", ruta: "T-20", km: "5.1", lat: -39.508119, lng: -73.001621},
+            {id: 'CM062', region: "Los Ríos", sector: "RAPACO PROVINCIA DE RANCO", ruta: "T-712", km: "5.2", lat: -40.255782, lng: -73.008211},
+            {id: 'CM063', region: "Los Ríos", sector: "VISTA HERMOSA PROVINCIA DE RANCO", ruta: "T-80", km: "2", lat: -40.306526, lng: -73.101829},
+            {id: 'CM064', region: "Los Lagos", sector: "LOS VOLCANES PROVINCIA DE OSORNO", ruta: "CH-215", km: "8", lat: -40.606933, lng: -73.014531},
+            {id: 'CM065', region: "Los Lagos", sector: "RUTA DEL MAR (POAUCHO) PROVINCIA DE OSORNO", ruta: "U-40", km: "8", lat: -40.567257, lng: -73.242754},
+            {id: 'CM066', region: "Los Lagos", sector: "PICHIL PROVINCIA DE OSORNO", ruta: "V-55-U", km: "10", lat: -40.675087, lng: -73.031116},
+            {id: 'CM067', region: "Los Lagos", sector: "CANCURA SUR PROVINCIA DE OSORNO", ruta: "V-55", km: "26", lat: -40.760311, lng: -72.967678},
+            {id: 'CM068', region: "Los Lagos", sector: "CANCURA NORTE PROVINCIA DE OSORNO", ruta: "V-55", km: "21", lat: -40.760311, lng: -72.967678},
+            {id: 'CM069', region: "Los Lagos", sector: "LAS QUEMAS PROVINCIA DE LLANQUIHUE", ruta: "V-60", km: "19", lat: -41.400297, lng: -73.188997},
+            {id: 'CM070', region: "Los Lagos", sector: "SAN RAFAEL 1 PROVINCIA DE LLANQUIHUE", ruta: "V-843", km: "2.3", lat: -41.769227, lng: -73.161948},
+            {id: 'CM071', region: "Los Lagos", sector: "SAN RAFAEL 2 PROVINCIA DE LLANQUIHUE", ruta: "V-843", km: "2.3", lat: -41.769424, lng: -73.162436},
+            {id: 'CM072', region: "Los Lagos", sector: "CONTAO PROVINCIA DE PALENA", ruta: "R-7", km: "52.7", lat: -41.78411, lng: -72.69694},
+            {id: 'CM073', region: "Los Lagos", sector: "CHACAO PROVINCIA DE CHILOE", ruta: "R-5", km: "1087", lat: -41.834509, lng: -73.526475},
+            {id: 'CM074', region: "Los Lagos", sector: "DEGAÑ PROVINCIA DE CHILOE", ruta: "R-5", km: "1144", lat: -42.141020, lng: -73.721948},
+            {id: 'CM075', region: "Aysén", sector: "VILLA CERRO CASTILLO PROVINCIA GENERAL CARRERA", ruta: "7", km: "100", lat: -46.120836, lng: -72.161658},
+            {id: 'CM076', region: "Aysén", sector: "ACCESO A PUERTO CISNES PROVINCIA DE AYSEN", ruta: "X-24", km: "13", lat: -44.681821, lng: -72.510499},
+            {id: 'CM077', region: "Aysén", sector: "COYHAIQUE PROVINCIA DE COYHAIQUE", ruta: "Ch-243", km: "14", lat: -45.5497, lng: -71.928089},
+            {id: 'CM078', region: "Aysén", sector: "RECTA MELIPAL EL BLANCO PROVINCIA DE COYHAIQUE", ruta: "7", km: "37", lat: -45.816878, lng: -71.905422},
+            {id: 'CM079', region: "Magallanes", sector: "LEÑADURA PROVINCIA DE MAGALLANES", ruta: "9", km: "9.2", lat: -53.240325, lng: -70.945436},
+            {id: 'CM080', region: "Magallanes", sector: "SAN GREGORIO PROVINCIA DE MAGALLANES", ruta: "255-Ch", km: "70", lat: -52.599461, lng: -70.190922},
+            {id: 'CM081', region: "Magallanes", sector: "CASAS VIEJAS PROVINCIA DE ULTIMA ESPERANZA", ruta: "9", km: "231", lat: -51.699351, lng: -72.330886}
+        ];
+        
+        // Inicializar el mapa
+        function initMap() {
+            // Crear mapa centrado en Chile
+            map = L.map('map').setView([-35.6751, -71.5430], 5);
+            
+            // Añadir capa base de OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors | Dirección de Vialidad de Chile',
+                maxZoom: 18
+            }).addTo(map);
+            
+            // Cargar datos guardados si existen
+            loadFromLocalStorage();
+            
+            // Renderizar puntos en el mapa
+            renderAllPoints();
+            
+            // Añadir controles al mapa
+            addMapControls();
+            
+            // Event listener para click derecho en el mapa
+            map.on('contextmenu', function(e) {
+                openAddPointModal(e.latlng);
+            });
+        }
+        
+      // Cargar datos desde localStorage con validaciones robustas
+function loadFromLocalStorage() {
+    const savedData = localStorage.getItem('vialidadData');
+
+    if (!savedData) {
+        console.log('%c[LOCALSTORAGE] No hay datos guardados. Usando datos por defecto.', 'color: orange;');
+        return;
+    }
+
+    try {
+        const data = JSON.parse(savedData);
+
+        // VALIDACIÓN 1: estructura básica correcta
+        const hasPlazas = Array.isArray(data.plazasFijas);
+        const hasControles = Array.isArray(data.controlesMoviles);
+
+        if (!hasPlazas || !hasControles) {
+            console.warn('%c[LOCALSTORAGE] Estructura inválida. Restaurando datos originales...', 'color: red;');
+            localStorage.removeItem('vialidadData');
+            return;
+        }
+
+        // VALIDACIÓN 2: tamaño mínimo (protege contra datos corruptos o incompletos)
+        const MIN_PLAZAS = 24;        // número real de plazas fijas
+        const MIN_MOVILES = 80;       // aceptamos algo de tolerancia por si agregas uno nuevo
+
+        if (data.plazasFijas.length < MIN_PLAZAS || data.controlesMoviles.length < MIN_MOVILES) {
+            console.warn('%c[LOCALSTORAGE] Datos incompletos detectados. Restaurando datos originales...', 'color: red;');
+            console.warn(`Plazas cargadas: ${data.plazasFijas.length}, Móviles cargados: ${data.controlesMoviles.length}`);
+            localStorage.removeItem('vialidadData');
+            return;
+        }
+
+        // Si pasa todas las validaciones → cargar datos correctamente
+        plazasFijasData = data.plazasFijas;
+        controlesMovilesData = data.controlesMoviles;
+
+        console.log('%c[LOCALSTORAGE] Datos cargados correctamente.', 'color: green;');
+        console.log(`Plazas: ${data.plazasFijas.length}, Controles móviles: ${data.controlesMoviles.length}`);
+
+    } catch (e) {
+        console.error('%c[LOCALSTORAGE] Error al leer JSON. Restaurando datos por defecto...', 'color: red;', e);
+        localStorage.removeItem('vialidadData');
+    }
+}
+        // Guardar datos en localStorage
+        function saveToLocalStorage() {
+            const data = {
+                plazasFijas: plazasFijasData,
+                controlesMoviles: controlesMovilesData,
+                lastUpdate: new Date().toISOString()
+            };
+            localStorage.setItem('vialidadData', JSON.stringify(data));
+        }
+        
+        // Iconos personalizados
+        var iconoPlazaFija = L.divIcon({
+            html: '<div style="background-color: #2E7D32; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>',
+            iconSize: [16, 16],
+            className: 'plaza-fija-icon'
+        });
+        
+        var iconoControlMovil = L.divIcon({
+            html: '<div style="background-color: #C62828; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>',
+            iconSize: [16, 16],
+            className: 'control-movil-icon'
+        });
+        
+        // Función para crear popup content
+        function createPopupContent(point, type) {
+            const name = type === 'plaza' ? point.nombre : point.sector;
+            const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${point.lat},${point.lng}`;
+            
+            return `
+                <div class="custom-popup">
+                    <div class="info-box">
+                        <h3>${type === 'plaza' ? 'Plaza Fija' : 'Control Móvil'}</h3>
+                        <strong>${name}</strong><br>
+                        <strong>Región:</strong> ${point.region}<br>
+                        <strong>Ruta:</strong> ${point.ruta} ${point.km ? `km. ${point.km}` : ''}<br>
+                        <strong>Coordenadas:</strong> ${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}<br>
+                        
+                        <div class="popup-buttons">
+                            <a href="${googleMapsUrl}" target="_blank" class="popup-btn popup-btn-maps">
+                                <i class="fas fa-directions"></i> Cómo llegar
+                            </a>
+                            <button onclick="editPoint('${point.id}')" class="popup-btn popup-btn-edit">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button onclick="deletePoint('${point.id}')" class="popup-btn popup-btn-delete">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Función para renderizar todos los puntos
+        function renderAllPoints() {
+            // Limpiar capas existentes
+            plazasFijas.clearLayers();
+            controlesMoviles.clearLayers();
+            allMarkers = {};
+            
+            // Renderizar plazas fijas
+            plazasFijasData.forEach(function(plaza) {
+                var marker = L.marker([plaza.lat, plaza.lng], {icon: iconoPlazaFija})
+                    .bindPopup(createPopupContent(plaza, 'plaza'));
+                plazasFijas.addLayer(marker);
+                allMarkers[plaza.id] = marker;
+            });
+            
+            // Renderizar controles móviles
+            controlesMovilesData.forEach(function(control) {
+                var marker = L.marker([control.lat, control.lng], {icon: iconoControlMovil})
+                    .bindPopup(createPopupContent(control, 'control'));
+                controlesMoviles.addLayer(marker);
+                allMarkers[control.id] = marker;
+            });
+            
+            // Añadir capas al mapa
+            plazasFijas.addTo(map);
+            controlesMoviles.addTo(map);
+            
+            updateCounters();
+        }
+        
+        // Función para añadir controles al mapa
+        function addMapControls() {
+            // Control de búsqueda y filtros
+            var searchControl = L.control({position: 'topleft'});
+            searchControl.onAdd = function(map) {
+                var div = L.DomUtil.create('div', 'control-panel');
+                div.innerHTML = `
+                    <h4>Panel de Control</h4>
+                    
+                    <!-- Búsqueda -->
+                    <input type="text" id="searchInput" placeholder="🔍 Buscar punto..." onkeyup="searchPoints()">
+                    
+                    <!-- Filtro por región -->
+                    <select id="regionFilter" onchange="filterByRegion()">
+                        <option value="">Todas las regiones</option>
+                        <option value="Arica y Parinacota">Arica y Parinacota</option>
+                        <option value="Tarapacá">Tarapacá</option>
+                        <option value="Antofagasta">Antofagasta</option>
+                        <option value="Atacama">Atacama</option>
+                        <option value="Coquimbo">Coquimbo</option>
+                        <option value="Valparaíso">Valparaíso</option>
+                        <option value="Metropolitana">Metropolitana</option>
+                        <option value="O'Higgins">O'Higgins</option>
+                        <option value="Maule">Maule</option>
+                        <option value="Ñuble">Ñuble</option>
+                        <option value="Biobío">Biobío</option>
+                        <option value="La Araucanía">La Araucanía</option>
+                        <option value="Los Ríos">Los Ríos</option>
+                        <option value="Los Lagos">Los Lagos</option>
+                        <option value="Aysén">Aysén</option>
+                        <option value="Magallanes">Magallanes</option>
+                    </select>
+                    
+                    <!-- Filtros por tipo -->
+                    <div class="filter-types">
+                        <label>
+                            <input type="checkbox" id="filterPlazas" checked onchange="filterByType()">
+                            Plazas Fijas
+                        </label>
+                        <label>
+                            <input type="checkbox" id="filterControles" checked onchange="filterByType()">
+                            Controles Móviles
+                        </label>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <button class="btn-add" onclick="showAddModal()">
+                        <i class="fas fa-plus"></i> Añadir Punto
+                    </button>
+                    <button class="btn-export" onclick="exportData()">
+                        <i class="fas fa-download"></i> Exportar
+                    </button>
+                    <button class="btn-clear-filters" onclick="clearFilters()">
+                        <i class="fas fa-times"></i> Limpiar Filtros
+                    </button>
+                `;
+                return div;
+            };
+            searchControl.addTo(map);
+            
+            // Control de capas
+            var overlayMaps = {
+                "Plazas Fijas": plazasFijas,
+                "Controles Móviles": controlesMoviles
+            };
+            L.control.layers(null, overlayMaps, {collapsed: false, position: 'topright'}).addTo(map);
+            
+            // Leyenda
+            var legend = L.control({position: 'bottomright'});
+            legend.onAdd = function (map) {
+                var div = L.DomUtil.create('div', 'legend');
+                div.innerHTML += '<h4>Tipos de Control</h4>';
+                div.innerHTML += '<i style="background: #2E7D32"></i> Plazas Fijas<br>';
+                div.innerHTML += '<i style="background: #C62828"></i> Controles Móviles<br>';
+                div.innerHTML += '<hr>';
+                div.innerHTML += '<small>Dirección de Vialidad<br>Chile</small>';
+                div.innerHTML += '<br><small style="color: #666;">Click derecho para añadir punto</small>';
+                return div;
+            };
+            legend.addTo(map);
+            
+            // Contador de puntos
+            var info = L.control({position: 'topright'});
+            info.onAdd = function (map) {
+                var div = L.DomUtil.create('div', 'info-box');
+                div.id = 'info-counter';
+                div.innerHTML = getCounterHTML();
+                return div;
+            };
+            info.addTo(map);
+        }
+        
+        // Función para obtener HTML del contador
+        function getCounterHTML() {
+            const totalPlazas = plazasFijasData.length;
+            const totalControles = controlesMovilesData.length;
+            const total = totalPlazas + totalControles;
+            
+            return `
+                <h3>Controles de Vialidad</h3>
+                <strong>Total de puntos: ${total}</strong><br>
+                Plazas Fijas: ${totalPlazas}<br>
+                Controles Móviles: ${totalControles}
+            `;
+        }
+        
+        // Actualizar contadores
+        function updateCounters() {
+            const counterDiv = document.getElementById('info-counter');
+            if (counterDiv) {
+                counterDiv.innerHTML = getCounterHTML();
+            }
+        }
+        
+        // Función de búsqueda
+        function searchPoints() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            if (searchTerm === '') {
+                renderAllPoints();
+                return;
+            }
+            
+            // Limpiar capas
+            plazasFijas.clearLayers();
+            controlesMoviles.clearLayers();
+            
+            // Buscar en plazas fijas
+            plazasFijasData.forEach(function(plaza) {
+                if (plaza.nombre.toLowerCase().includes(searchTerm) ||
+                    plaza.region.toLowerCase().includes(searchTerm) ||
+                    plaza.ruta.toLowerCase().includes(searchTerm)) {
+                    var marker = L.marker([plaza.lat, plaza.lng], {icon: iconoPlazaFija})
+                        .bindPopup(createPopupContent(plaza, 'plaza'));
+                    plazasFijas.addLayer(marker);
+                }
+            });
+            
+            // Buscar en controles móviles
+            controlesMovilesData.forEach(function(control) {
+                if (control.sector.toLowerCase().includes(searchTerm) ||
+                    control.region.toLowerCase().includes(searchTerm) ||
+                    control.ruta.toLowerCase().includes(searchTerm)) {
+                    var marker = L.marker([control.lat, control.lng], {icon: iconoControlMovil})
+                        .bindPopup(createPopupContent(control, 'control'));
+                    controlesMoviles.addLayer(marker);
+                }
+            });
+        }
+        
+        // Filtrar por región
+        function filterByRegion() {
+            const selectedRegion = document.getElementById('regionFilter').value;
+            const showPlazas = document.getElementById('filterPlazas').checked;
+            const showControles = document.getElementById('filterControles').checked;
+            
+            // Limpiar capas
+            plazasFijas.clearLayers();
+            controlesMoviles.clearLayers();
+            
+            // Filtrar y mostrar plazas fijas
+            if (showPlazas) {
+                plazasFijasData.forEach(function(plaza) {
+                    if (selectedRegion === '' || plaza.region === selectedRegion) {
+                        var marker = L.marker([plaza.lat, plaza.lng], {icon: iconoPlazaFija})
+                            .bindPopup(createPopupContent(plaza, 'plaza'));
+                        plazasFijas.addLayer(marker);
+                        allMarkers[plaza.id] = marker;
+                    }
+                });
+            }
+            
+            // Filtrar y mostrar controles móviles
+            if (showControles) {
+                controlesMovilesData.forEach(function(control) {
+                    if (selectedRegion === '' || control.region === selectedRegion) {
+                        var marker = L.marker([control.lat, control.lng], {icon: iconoControlMovil})
+                            .bindPopup(createPopupContent(control, 'control'));
+                        controlesMoviles.addLayer(marker);
+                        allMarkers[control.id] = marker;
+                    }
+                });
+            }
+            
+            // Ajustar vista si hay región seleccionada
+            if (selectedRegion && (plazasFijas.getLayers().length > 0 || controlesMoviles.getLayers().length > 0)) {
+                var allLayers = [...plazasFijas.getLayers(), ...controlesMoviles.getLayers()];
+                if (allLayers.length > 0) {
+                    var group = new L.featureGroup(allLayers);
+                    map.fitBounds(group.getBounds().pad(0.1));
+                }
+            }
+        }
+        
+        // Filtrar por tipo
+        function filterByType() {
+            const showPlazas = document.getElementById('filterPlazas').checked;
+            const showControles = document.getElementById('filterControles').checked;
+            
+            if (showPlazas) {
+                map.addLayer(plazasFijas);
+            } else {
+                map.removeLayer(plazasFijas);
+            }
+            
+            if (showControles) {
+                map.addLayer(controlesMoviles);
+            } else {
+                map.removeLayer(controlesMoviles);
+            }
+            
+            // Aplicar también el filtro de región si existe
+            const selectedRegion = document.getElementById('regionFilter').value;
+            if (selectedRegion) {
+                filterByRegion();
+            }
+        }
+        
+        // Limpiar todos los filtros
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('regionFilter').value = '';
+            document.getElementById('filterPlazas').checked = true;
+            document.getElementById('filterControles').checked = true;
+            renderAllPoints();
+            map.setView([-35.6751, -71.5430], 5);
+        }
+        
+        // Exportar datos
+        function exportData() {
+            const dataToExport = {
+                plazasFijas: plazasFijasData,
+                controlesMoviles: controlesMovilesData,
+                exportDate: new Date().toISOString(),
+                totalPoints: plazasFijasData.length + controlesMovilesData.length
+            };
+            
+            const dataStr = JSON.stringify(dataToExport, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const fileName = `controles_vialidad_${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', fileName);
+            linkElement.click();
+        }
+        
+        // Función para mostrar modal de añadir
+        function showAddModal() {
+            currentEditingId = null;
+            document.getElementById('modalTitle').textContent = 'Añadir Nuevo Punto de Control';
+            document.getElementById('pointForm').reset();
+            
+            // Obtener centro del mapa para sugerir coordenadas
+            const center = map.getCenter();
+            document.getElementById('pointLat').value = center.lat.toFixed(6);
+            document.getElementById('pointLng').value = center.lng.toFixed(6);
+            
+            document.getElementById('pointModal').classList.add('show');
+        }
+        
+        // Función para abrir modal con coordenadas específicas (click derecho)
+        function openAddPointModal(latlng) {
+            showAddModal();
+            document.getElementById('pointLat').value = latlng.lat.toFixed(6);
+            document.getElementById('pointLng').value = latlng.lng.toFixed(6);
+        }
+        
+        // Función para editar punto
+        function editPoint(pointId) {
+            currentEditingId = pointId;
+            
+            // Buscar el punto en ambos arrays
+            let point = plazasFijasData.find(p => p.id === pointId);
+            let type = 'plaza';
+            
+            if (!point) {
+                point = controlesMovilesData.find(p => p.id === pointId);
+                type = 'control';
+            }
+            
+            if (!point) {
+                alert('Punto no encontrado');
+                return;
+            }
+            
+            // Llenar el formulario con los datos existentes
+            document.getElementById('modalTitle').textContent = 'Editar Punto de Control';
+            document.getElementById('pointType').value = type;
+            document.getElementById('pointName').value = type === 'plaza' ? point.nombre : point.sector;
+            document.getElementById('pointRegion').value = point.region;
+            document.getElementById('pointRoute').value = point.ruta;
+            document.getElementById('pointKm').value = point.km || '';
+            document.getElementById('pointLat').value = point.lat;
+            document.getElementById('pointLng').value = point.lng;
+            document.getElementById('pointId').value = pointId;
+            
+            document.getElementById('pointModal').classList.add('show');
+        }
+        
+        // Función para guardar punto (crear o actualizar)
+        function savePoint() {
+            // Obtener valores del formulario
+            const type = document.getElementById('pointType').value;
+            const name = document.getElementById('pointName').value.trim();
+            const region = document.getElementById('pointRegion').value;
+            const route = document.getElementById('pointRoute').value.trim();
+            const km = document.getElementById('pointKm').value.trim();
+            const lat = parseFloat(document.getElementById('pointLat').value);
+            const lng = parseFloat(document.getElementById('pointLng').value);
+            
+            // Validaciones
+            if (!type || !name || !region || !lat || !lng) {
+                alert('Por favor complete todos los campos obligatorios');
+                return;
+            }
+            
+            if (lat < -56 || lat > -17 || lng < -76 || lng > -66) {
+                if (!confirm('Las coordenadas parecen estar fuera de Chile. ¿Desea continuar?')) {
+                    return;
+                }
+            }
+            
+            // Crear objeto de punto
+            const pointData = {
+                region: region,
+                ruta: route,
+                km: km,
+                lat: lat,
+                lng: lng
+            };
+            
+            if (currentEditingId) {
+                // Actualizar punto existente
+                pointData.id = currentEditingId;
+                
+                if (type === 'plaza') {
+                    pointData.nombre = name;
+                    const index = plazasFijasData.findIndex(p => p.id === currentEditingId);
+                    if (index !== -1) {
+                        plazasFijasData[index] = pointData;
+                    } else {
+                        // Cambió de tipo: de control a plaza
+                        const controlIndex = controlesMovilesData.findIndex(p => p.id === currentEditingId);
+                        if (controlIndex !== -1) {
+                            controlesMovilesData.splice(controlIndex, 1);
+                            pointData.id = 'PF' + Date.now();
+                            plazasFijasData.push(pointData);
+                        }
+                    }
+                } else {
+                    pointData.sector = name;
+                    const index = controlesMovilesData.findIndex(p => p.id === currentEditingId);
+                    if (index !== -1) {
+                        controlesMovilesData[index] = pointData;
+                    } else {
+                        // Cambió de tipo: de plaza a control
+                        const plazaIndex = plazasFijasData.findIndex(p => p.id === currentEditingId);
+                        if (plazaIndex !== -1) {
+                            plazasFijasData.splice(plazaIndex, 1);
+                            pointData.id = 'CM' + Date.now();
+                            controlesMovilesData.push(pointData);
+                        }
+                    }
+                }
+            } else {
+                // Crear nuevo punto
+                if (type === 'plaza') {
+                    pointData.id = 'PF' + Date.now();
+                    pointData.nombre = name;
+                    plazasFijasData.push(pointData);
+                } else {
+                    pointData.id = 'CM' + Date.now();
+                    pointData.sector = name;
+                    controlesMovilesData.push(pointData);
+                }
+            }
+            
+            // Guardar en localStorage y actualizar mapa
+            saveToLocalStorage();
+            renderAllPoints();
+            closeModal();
+            
+            // Centrar mapa en el punto nuevo/editado
+            map.setView([lat, lng], 14);
+            
+            // Mostrar popup del punto
+            if (allMarkers[pointData.id]) {
+                allMarkers[pointData.id].openPopup();
+            }
+            
+            // Mostrar mensaje de éxito
+            const message = currentEditingId ? 'Punto actualizado correctamente' : 'Punto añadido correctamente';
+            showNotification(message, 'success');
+        }
+        
+        // Función para eliminar punto
+        function deletePoint(pointId) {
+            if (!confirm('¿Está seguro de que desea eliminar este punto de control?\n\nEsta acción no se puede deshacer.')) {
+                return;
+            }
+            
+            // Buscar y eliminar de plazas fijas
+            let index = plazasFijasData.findIndex(p => p.id === pointId);
+            if (index !== -1) {
+                plazasFijasData.splice(index, 1);
+            } else {
+                // Buscar y eliminar de controles móviles
+                index = controlesMovilesData.findIndex(p => p.id === pointId);
+                if (index !== -1) {
+                    controlesMovilesData.splice(index, 1);
+                }
+            }
+            
+            // Guardar cambios y actualizar mapa
+            saveToLocalStorage();
+            renderAllPoints();
+            
+            showNotification('Punto eliminado correctamente', 'success');
+        }
+        
+        // Función para cerrar modal
+        function closeModal() {
+            document.getElementById('pointModal').classList.remove('show');
+            document.getElementById('pointForm').reset();
+            currentEditingId = null;
+        }
+        
+        // Función para mostrar notificaciones
+        function showNotification(message, type = 'info') {
+            // Crear elemento de notificación si no existe
+            let notification = document.getElementById('notification');
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'notification';
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 15px 20px;
+                    border-radius: 5px;
+                    color: white;
+                    font-weight: bold;
+                    z-index: 10000;
+                    display: none;
+                    max-width: 300px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                `;
+                document.body.appendChild(notification);
+            }
+            
+            // Establecer color según el tipo
+            const colors = {
+                success: '#4CAF50',
+                error: '#f44336',
+                info: '#2196F3',
+                warning: '#ff9800'
+            };
+            
+            notification.style.backgroundColor = colors[type] || colors.info;
+            notification.textContent = message;
+            notification.style.display = 'block';
+            
+            // Ocultar después de 3 segundos
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Event listeners adicionales
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar mapa
+            initMap();
+            
+            // Cerrar modal al hacer click fuera de él
+            window.onclick = function(event) {
+                const modal = document.getElementById('pointModal');
+                if (event.target == modal) {
+                    closeModal();
+                }
+            }
+            
+            // Atajos de teclado
+            document.addEventListener('keydown', function(e) {
+                // ESC para cerrar modal
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+                
+                // Ctrl+N para nuevo punto
+                if (e.ctrlKey && e.key === 'n') {
+                    e.preventDefault();
+                    showAddModal();
+                }
+                
+                // Ctrl+E para exportar
+                if (e.ctrlKey && e.key === 'e') {
+                    e.preventDefault();
+                    exportData();
+                }
+                
+                // Ctrl+F para enfocar búsqueda
+                if (e.ctrlKey && e.key === 'f') {
+                    e.preventDefault();
+                    document.getElementById('searchInput').focus();
+                }
+            });
+            
+            // Prevenir envío de formulario
+            document.getElementById('pointForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                savePoint();
+            });
+            
+            // Autoguardado cada 30 segundos
+            setInterval(function() {
+                if (plazasFijasData.length > 0 || controlesMovilesData.length > 0) {
+                    saveToLocalStorage();
+                }
+            }, 30000);
+            
+            // Mensaje de bienvenida
+            console.log('%c Sistema de Control de Vialidad - Chile', 
+                        'color: #2E7D32; font-size: 20px; font-weight: bold;');
+            console.log('Versión 2.0 - Con gestión completa de puntos');
+            console.log('Total de puntos cargados: ' + (plazasFijasData.length + controlesMovilesData.length));
+            console.log('Plazas Fijas: ' + plazasFijasData.length);
+            console.log('Controles Móviles: ' + controlesMovilesData.length);
+            console.log('Atajos: Ctrl+N (Nuevo), Ctrl+E (Exportar), Ctrl+F (Buscar)');
+        });
+    </script>
+</body>
+</html>
